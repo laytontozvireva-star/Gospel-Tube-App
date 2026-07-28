@@ -1,4 +1,5 @@
 import "./main.css";
+import PageShell from "../components/PageShell";
 
 function Videos() {
   const videos = [
@@ -41,53 +42,44 @@ function Videos() {
   ];
 
   return (
-    <div className="videos-page">
+    <PageShell
+      title="Gospel Videos"
+      description="Discover inspiring sermons, worship songs, Bible studies, and Christian testimonies."
+    >
+      <div className="videos-page">
+        <section className="videos-header">
+          <input
+            type="text"
+            placeholder="Search videos..."
+            className="search-bar"
+          />
+        </section>
 
-      <section className="videos-header">
-        <h1>Gospel Videos</h1>
-        <p>
-          Discover inspiring sermons, worship songs, Bible studies,
-          and Christian testimonies.
-        </p>
+        <section className="video-grid">
+          {videos.map((video, index) => (
+            <div className="video-card" key={index}>
+              <div className="video-thumbnail">Thumbnail</div>
 
-        <input
-          type="text"
-          placeholder="Search videos..."
-          className="search-bar"
-        />
-      </section>
+              <div className="video-info">
+                <span className="category">{video.category}</span>
 
-      <section className="video-grid">
+                <h3>{video.title}</h3>
 
-        {videos.map((video, index) => (
-          <div className="video-card" key={index}>
+                <p>
+                  <strong>Speaker:</strong> {video.speaker}
+                </p>
 
-            <div className="video-thumbnail">
-              Thumbnail
+                <p>
+                  <strong>Duration:</strong> {video.duration}
+                </p>
+
+                <button>â–¶ Watch</button>
+              </div>
             </div>
-
-            <div className="video-info">
-              <span className="category">{video.category}</span>
-
-              <h3>{video.title}</h3>
-
-              <p>
-                <strong>Speaker:</strong> {video.speaker}
-              </p>
-
-              <p>
-                <strong>Duration:</strong> {video.duration}
-              </p>
-
-              <button>▶ Watch</button>
-            </div>
-
-          </div>
-        ))}
-
-      </section>
-
-    </div>
+          ))}
+        </section>
+      </div>
+    </PageShell>
   );
 }
 
