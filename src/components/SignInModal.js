@@ -6,16 +6,22 @@ function SignInModal({ open, onClose }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   if (!open) return null;
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    signIn({ name, email, password });
-    onClose();
-    setName("");
-    setEmail("");
-    setPassword("");
+    setError("");
+    try {
+      await signIn({ name, email, password });
+      onClose();
+      setName("");
+      setEmail("");
+      setPassword("");
+    } catch (submitError) {
+      setError(submitError.message || "Unable to sign in. Please try again.");
+    }
   };
 
   return (
@@ -29,6 +35,8 @@ function SignInModal({ open, onClose }) {
             Name
             <input value={name} onChange={(event) => setName(event.target.value)} required />
           </label>
+
+          {error && <p className="auth-error">{error}</p>}
 
           <label>
             Email

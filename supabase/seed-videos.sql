@@ -1,0 +1,7 @@
+-- Direct alternative to CSV import. Run this in Supabase SQL Editor.
+insert into public.videos
+  (owner_id, apostle_id, title, description, category, tags, thumbnail_url, duration_seconds, status, views_count)
+values
+  ('335eda98-7bb3-43e3-ae4e-f92e9cbe5c77', 'e097a620-3cf8-4a54-90d7-7a702dfdd01d', 'Walking in the Power of the Holy Spirit', 'Foundational teaching for a daily Christian walk', 'Bible Teachings', '{}', 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=800', 2901, 'published', 0),
+  ('335eda98-7bb3-43e3-ae4e-f92e9cbe5c77', '9bc7d775-467d-4b87-b2c0-891646753faf', 'The Power of Prayer', 'A message about persistent prayer and intercession', 'Sermon', '{}', 'https://images.unsplash.com/photo-1519817650390-64a93db51149?w=800', 3130, 'published', 0),
+  ('335eda98-7bb3-43e3-ae4e-f92e9cbe5c77', 'dd440b63-8e0a-4264-9602-f3b4d4db3e12', 'Amazing Grace Worship', 'A worship session for reflection and praise', 'Worship Music', '{}', 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800', 312, 'published', 0);

@@ -1,0 +1,4 @@
+owner_id,name,description,is_public
+<AUTH_USER_UUID>,Faith Teachings,Messages that build faith and spiritual strength,true
+<AUTH_USER_UUID>,Prayer Teachings,Prayer sermons and intercession sessions,true
+<AUTH_USER_UUID>,Holy Spirit Series,Teaching about the power and work of the Holy Spirit,true
