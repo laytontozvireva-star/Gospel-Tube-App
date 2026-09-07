@@ -131,7 +131,6 @@ function PageShell({ title, description, children }) {
           }}
           onFocus={() => setShowHistory(true)}
           onKeyDown={handleKeyDown}
-          onMouseDown={(e) => e.preventDefault()}
           className={`w-full bg-slate-100 border border-slate-200 text-slate-800 rounded-full py-2.5 ${isMobile ? "pl-11" : "pl-5"} pr-16 text-sm outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner`}
         />
         
