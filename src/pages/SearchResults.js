@@ -1,30 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Filter, Search, Play, Loader2 } from "lucide-react";
+import { Filter, Search, Play, Loader2, ShieldCheck, X, ExternalLink } from "lucide-react";
 import PageShell from "../components/PageShell";
 import { searchYouTubeVideos } from "../lib/youtube";
+
+const contentFilters = [
+  { label: "All", matches: () => true },
+  { label: "Sermons", matches: (text) => /sermon|preach|message|pastor|apostle|prophet/.test(text) },
+  { label: "Worship", matches: (text) => /worship|praise|music|song|choir/.test(text) },
+  { label: "Bible Teaching", matches: (text) => /bible|teaching|devotion|scripture|word of god/.test(text) },
+  { label: "Testimonies", matches: (text) => /testimony|testimonies|miracle|deliverance/.test(text) },
+];
 
 function SearchResults() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Get query directly from URL params on each render
-  const queryParams = new URLSearchParams(location.search);
-  const query = queryParams.get("q") || "";
-  
+  const query = new URLSearchParams(location.search).get("q") || "";
+
   const [searchInput, setSearchInput] = useState(query);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [contentFilter, setContentFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("Most Relevant");
 
   useEffect(() => {
     let active = true;
-    if (!query) return;
-    
+    setSearchInput(query);
+    setContentFilter("All");
+    setSortBy("Most Relevant");
+
+    if (!query) {
+      setResults([]);
+      return undefined;
+    }
+
     setLoading(true);
     setError(null);
-    
     searchYouTubeVideos(query, 25)
       .then((data) => {
         if (active) {
@@ -32,57 +45,65 @@ function SearchResults() {
           setLoading(false);
         }
       })
-      .catch((err) => {
+      .catch(() => {
         if (active) {
-          setError("Failed to fetch search results.");
+          setError("We could not load search results. Please try again.");
           setLoading(false);
         }
       });
-      
+
     return () => { active = false; };
   }, [query]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchInput.trim()) {
-      // Save to history
-      try {
-        const currentHistory = JSON.parse(localStorage.getItem("gt_search_history") || "[]");
-        const newHistory = [searchInput, ...currentHistory.filter(q => q !== searchInput)].slice(0, 5);
-        localStorage.setItem("gt_search_history", JSON.stringify(newHistory));
-      } catch (err) {}
-      navigate(`/search?q=${encodeURIComponent(searchInput)}`, { replace: true });
+  const visibleResults = useMemo(() => {
+    const filter = contentFilters.find((item) => item.label === contentFilter) || contentFilters[0];
+    const filtered = results.filter((video) =>
+      filter.matches(`${video.title} ${video.author} ${video.description}`.toLowerCase())
+    );
+
+    if (sortBy === "Latest") {
+      return [...filtered].sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
     }
+    return filtered;
+  }, [results, contentFilter, sortBy]);
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const nextQuery = searchInput.trim();
+    if (!nextQuery) return;
+
+    try {
+      const currentHistory = JSON.parse(localStorage.getItem("gt_search_history") || "[]");
+      const newHistory = [nextQuery, ...currentHistory.filter((item) => item !== nextQuery)].slice(0, 5);
+      localStorage.setItem("gt_search_history", JSON.stringify(newHistory));
+    } catch {}
+    navigate(`/search?q=${encodeURIComponent(nextQuery)}`, { replace: true });
   };
 
   return (
-    <PageShell title={`Results for “${query}”`} description="Search sermons, apostles, playlists, and channels across GospelTube.">
+    <PageShell title={`Results for “${query}”`} description="Find gospel sermons, worship, Bible teaching, and Christian testimonies.">
       <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto py-6">
-        {/* Sidebar Filters */}
-        <aside className="w-full lg:w-64 flex-shrink-0">
-          <div className="flex items-center gap-2 font-semibold text-lg border-b pb-4 mb-4">
-            <Filter size={20} /> 
-            Filters
+        <aside className="w-full lg:w-64 flex-shrink-0 rounded-2xl bg-white border border-slate-200 p-5 h-fit">
+          <div className="flex items-center gap-2 font-bold text-lg border-b border-slate-100 pb-4 mb-4">
+            <Filter size={20} className="text-red-600" /> Filters
           </div>
-          
           <div className="mb-6">
-            <h3 className="font-medium mb-3 text-gray-700">Type</h3>
+            <h3 className="font-semibold mb-3 text-slate-700">Content type</h3>
             <div className="flex flex-col gap-3">
-              {["All", "Apostles", "Sermons", "Playlists", "Channels"].map((type, i) => (
-                <label className="flex items-center gap-3 cursor-pointer text-sm" key={type}>
-                  <input type="radio" name="type" defaultChecked={i === 0} className="w-4 h-4 text-brand-red focus:ring-brand-red" /> 
-                  {type}
+              {contentFilters.map((filter) => (
+                <label className="flex items-center gap-3 cursor-pointer text-sm text-slate-600" key={filter.label}>
+                  <input type="radio" name="type" checked={contentFilter === filter.label} onChange={() => setContentFilter(filter.label)} className="w-4 h-4 text-red-600 focus:ring-red-500" />
+                  {filter.label}
                 </label>
               ))}
             </div>
           </div>
-          
           <div>
-            <h3 className="font-medium mb-3 text-gray-700">Sort by</h3>
+            <h3 className="font-semibold mb-3 text-slate-700">Sort by</h3>
             <div className="flex flex-col gap-3">
-              {["Most Relevant", "Latest", "Most Viewed"].map((sort, i) => (
-                <label className="flex items-center gap-3 cursor-pointer text-sm" key={sort}>
-                  <input type="radio" name="sort" defaultChecked={i === 0} className="w-4 h-4 text-brand-red focus:ring-brand-red" /> 
+              {["Most Relevant", "Latest"].map((sort) => (
+                <label className="flex items-center gap-3 cursor-pointer text-sm text-slate-600" key={sort}>
+                  <input type="radio" name="sort" checked={sortBy === sort} onChange={() => setSortBy(sort)} className="w-4 h-4 text-red-600 focus:ring-red-500" />
                   {sort}
                 </label>
               ))}
@@ -90,103 +111,84 @@ function SearchResults() {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <section className="flex-1">
-          <form onSubmit={handleSearch} className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border mb-8 focus-within:border-brand-red focus-within:ring-1 focus-within:ring-brand-red transition-all">
-            <Search size={20} className="text-gray-400 ml-2" />
-            <input 
-              value={searchInput} 
-              onChange={(e) => setSearchInput(e.target.value)} 
-              aria-label="Search" 
-              className="flex-1 outline-none bg-transparent"
-              placeholder="Search GospelTube or YouTube..."
-            />
-            <button type="submit" className="bg-brand-red hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-              Search
-            </button>
+        <section className="flex-1 min-w-0">
+          <form onSubmit={handleSearch} className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border mb-5 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 transition-all">
+            <Search size={20} className="text-slate-400 ml-2 shrink-0" />
+            <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} aria-label="Search" className="flex-1 min-w-0 outline-none bg-transparent" placeholder="Search GospelTube..." />
+            <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-semibold transition-colors">Search</button>
           </form>
 
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1.5 text-xs font-bold"><ShieldCheck size={15} /> Gospel & Christian results only</span>
+            {!loading && !error && <span className="text-sm text-slate-500">{visibleResults.length} result{visibleResults.length === 1 ? "" : "s"}</span>}
+          </div>
+
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Loader2 size={48} className="animate-spin mb-4 text-brand-red" />
-              <p>Searching YouTube for "{query}"...</p>
-            </div>
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400"><Loader2 size={48} className="animate-spin mb-4 text-red-600" /><p>Searching YouTube for “{query}”...</p></div>
           ) : error ? (
-            <div className="text-center py-16 bg-red-50 rounded-2xl border border-red-200 mt-8 text-red-600">
-              <p>{error}</p>
-            </div>
+            <div className="text-center py-16 bg-red-50 rounded-2xl border border-red-200 text-red-600"><p>{error}</p></div>
           ) : (
             <>
-              {results.length > 0 && <h2 className="text-xl font-bold mb-4">Sermons & Videos</h2>}
-              <div className="flex flex-col gap-6">
-                {results.map((video) => (
-                  <article 
-                    className="flex flex-col sm:flex-row gap-4 group cursor-pointer bg-white p-2 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all" 
-                    key={video.id}
-                    onClick={() => setSelectedVideo(video)}
-                  >
-                    <div className="relative flex-shrink-0 sm:w-80 rounded-xl overflow-hidden aspect-video bg-gray-100">
-                      <img src={video.image} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="bg-brand-red rounded-full p-3 text-white">
-                          <Play size={24} fill="currentColor" className="ml-1" />
-                        </div>
-                      </div>
+              {visibleResults.length > 0 && <h2 className="text-xl font-extrabold mb-4 text-slate-900">Gospel videos matching “{query}”</h2>}
+              <div className="flex flex-col gap-5">
+                {visibleResults.map((video) => (
+                  <article className="flex flex-col sm:flex-row gap-4 group cursor-pointer bg-white p-2 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-red-100 transition-all" key={video.id} onClick={() => setSelectedVideo(video)}>
+                    <div className="relative flex-shrink-0 sm:w-80 rounded-xl overflow-hidden aspect-video bg-slate-100">
+                      <img src={video.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2364758b' font-family='Arial' font-size='24'%3EGospelTube%3C/text%3E%3C/svg%3E"; }} />
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><div className="bg-red-600 rounded-full p-3 text-white"><Play size={24} fill="currentColor" className="ml-1" /></div></div>
                     </div>
-                    <div className="flex-1 py-1">
-                      <h3 
-                        className="text-lg font-semibold leading-tight mb-2 group-hover:text-brand-red transition-colors"
-                        dangerouslySetInnerHTML={{ __html: video.title }}
-                      ></h3>
-                      <p className="text-gray-600 mb-1 font-medium">{video.author}</p>
-                      <p className="text-sm text-gray-500 mb-3">{video.timeAgo} • YouTube</p>
-                      <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{video.description}</p>
-                    </div>
+                    <div className="flex-1 py-2 pr-2"><h3 className="text-lg font-bold leading-tight mb-2 group-hover:text-red-600 transition-colors">{video.title}</h3><p className="text-slate-600 mb-1 font-semibold">{video.author}</p><p className="text-sm text-slate-500 mb-3">{video.timeAgo} • YouTube</p><p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">{video.description}</p></div>
                   </article>
                 ))}
               </div>
-              
-              {!results.length && !loading && (
-                <div className="text-center py-16 bg-white rounded-2xl border border-dashed mt-8">
-                  <p className="text-gray-500 text-lg">No results found for “{query}”.</p>
-                </div>
-              )}
+              {!visibleResults.length && <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300"><p className="text-slate-700 text-lg font-semibold">No {contentFilter === "All" ? "gospel" : contentFilter.toLowerCase()} results found for “{query}”.</p><p className="text-slate-500 text-sm mt-2">Try a different search or choose another content type.</p></div>}
             </>
           )}
         </section>
       </div>
 
-      {/* YouTube Video Modal Player */}
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl relative flex flex-col">
-            <button 
-              className="absolute -top-12 right-0 z-50 w-10 h-10 flex items-center justify-center text-white bg-black/50 hover:bg-black/80 rounded-full transition-colors md:top-4 md:right-4"
-              onClick={(e) => { e.stopPropagation(); setSelectedVideo(null); }}
-            >
-              ×
-            </button>
-            <div className="aspect-video bg-black flex items-center justify-center relative w-full">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-3 sm:p-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Playing ${selectedVideo.title}`}
+          onClick={() => setSelectedVideo(null)}
+        >
+          <div className="w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6">
+              <div className="min-w-0 pr-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-red-600">Now playing</p>
+                <p className="truncate text-sm font-semibold text-slate-700">{selectedVideo.author}</p>
+              </div>
+              <button type="button" onClick={() => setSelectedVideo(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="Close player">
+                <X size={21} />
+              </button>
+            </div>
+
+            <div className="aspect-video bg-black">
               <iframe
-                className="w-full h-full absolute inset-0"
-                src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1`}
+                className="h-full w-full"
+                src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1&rel=0`}
                 title={selectedVideo.title}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-              ></iframe>
+              />
             </div>
-            <div className="p-6 md:p-8 overflow-y-auto max-h-48">
-              <h2 
-                className="text-2xl font-bold text-slate-900 mb-2"
-                dangerouslySetInnerHTML={{ __html: selectedVideo.title }}
-              ></h2>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm font-semibold text-slate-700">{selectedVideo.author}</span>
+
+            <div className="max-h-56 overflow-y-auto p-5 sm:p-7">
+              <h2 className="text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl">{selectedVideo.title}</h2>
+              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <span className="font-bold text-slate-700">{selectedVideo.author}</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-sm text-slate-500">YouTube</span>
+                <span className="text-slate-500">{selectedVideo.timeAgo}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700"><ShieldCheck size={13} /> GospelTube</span>
               </div>
-              <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{selectedVideo.description}</p>
+              <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{selectedVideo.description}</p>
+              <a href={selectedVideo.videoUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                Watch on YouTube <ExternalLink size={15} />
+              </a>
             </div>
           </div>
         </div>

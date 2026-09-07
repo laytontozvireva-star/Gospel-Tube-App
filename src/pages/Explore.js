@@ -8,24 +8,28 @@ const exploreItems = [
     description: "Catch the latest messages drawing believers closer to the Word.",
     icon: Sparkles,
     color: "bg-amber-100 text-amber-600",
+    categoryKey: "Sermon",
   },
   {
     title: "Worship Sessions",
     description: "Browse praise and worship moments that help set the atmosphere.",
     icon: Music,
     color: "bg-blue-100 text-blue-600",
+    categoryKey: "Worship",
   },
   {
     title: "Bible Teachings",
     description: "Dig into practical teaching for daily Christian growth.",
     icon: BookOpen,
     color: "bg-green-100 text-green-600",
+    categoryKey: "Teaching",
   },
   {
     title: "Testimonies",
     description: "Hear real stories of faith, healing, and transformation.",
     icon: Heart,
     color: "bg-rose-100 text-rose-600",
+    categoryKey: "Music",
   },
 ];
 
@@ -36,21 +40,16 @@ function Explore() {
       title="Explore Gospel Tube"
       description="Find sermons, worship, teachings, and testimonies that match what you want to watch next."
     >
-      <div className="grid md:grid-cols-2 gap-6 mt-6">
+      <div className="flex overflow-x-auto gap-4 pb-4">
         {exploreItems.map((item) => (
-          <article 
-            className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex gap-5 group" 
+          <button
             key={item.title}
-            onClick={() => navigate("/videos")}
+            onClick={() => navigate(`/videos?category=${item.categoryKey}`)}
+            className={`flex flex-col items-center p-2 rounded-lg ${item.color} hover:scale-105 transition-transform`}
           >
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${item.color} group-hover:scale-110 transition-transform`}>
-              <item.icon size={28} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-red-600 transition-colors">{item.title}</h2>
-              <p className="text-slate-500 text-sm leading-relaxed">{item.description}</p>
-            </div>
-          </article>
+            <item.icon size={24} />
+            <span className="mt-1 text-sm font-medium">{item.title}</span>
+          </button>
         ))}
       </div>
     </PageShell>

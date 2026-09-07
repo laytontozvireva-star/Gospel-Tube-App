@@ -3,10 +3,12 @@ import { Play, Search, X } from "lucide-react";
 import PageShell from "../components/PageShell";
 import { isSupabaseConfigured, listVideos } from "../lib/supabase";
 import { motion } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function Videos() {
   const [query, setQuery] = useState("");
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const navigate = useNavigate();
   
   const builtInVideos = [
     {
@@ -95,7 +97,10 @@ function Videos() {
   }, []);
 
   const categories = ["All", "Sermon", "Worship", "Teaching", "Bible Study", "Music"];
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialCategory = queryParams.get("category") || "All";
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
   const filteredVideos = videos.filter((video) => {
     const matchesQuery = `${video.title} ${video.speaker} ${video.category}`.toLowerCase().includes(query.toLowerCase());
@@ -124,7 +129,10 @@ function Videos() {
           {categories.map(cat => (
             <button
               key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => {
+                setSelectedCategory(cat);
+                navigate(`?category=${cat}`);
+              }}
               className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 selectedCategory === cat
                   ? "bg-slate-900 text-white shadow-md"

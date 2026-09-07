@@ -47,6 +47,7 @@ export default async function handler(req, res) {
         title: item.snippet.title,
         author: item.snippet.channelTitle,
         timeAgo: new Date(item.snippet.publishedAt).toLocaleDateString(),
+        publishedAt: item.snippet.publishedAt,
         image: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
         description: item.snippet.description,
         videoUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`
