@@ -206,7 +206,7 @@ function PageShell({ title, description, children }) {
         {/* Mobile Search Overlay */}
         {mobileSearchOpen ? (
           <div className="w-full h-full flex items-center bg-white absolute inset-0 px-4 z-50">
-            <SearchBar isMobile={true} />
+            {SearchBar({ isMobile: true })}
           </div>
         ) : (
           <>
@@ -231,7 +231,7 @@ function PageShell({ title, description, children }) {
 
             {/* Center: Desktop Search Bar */}
             <div className="hidden md:flex flex-col flex-1">
-              <SearchBar isMobile={false} />
+              {SearchBar({ isMobile: false })}
             </div>
 
             {/* Right: Notifications & Sign In & Mobile Search Toggle */}
