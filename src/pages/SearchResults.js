@@ -25,7 +25,7 @@ function SearchResults() {
     setLoading(true);
     setError(null);
     
-    searchYouTubeVideos(query, 12)
+    searchYouTubeVideos(query, 25)
       .then((data) => {
         if (active) {
           setResults(data);

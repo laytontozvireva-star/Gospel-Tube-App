@@ -88,7 +88,7 @@ function PageShell({ title, description, children }) {
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex(prev => (prev < searchHistory.length - 1 ? prev + 1 : prev));
+      setSelectedIndex(prev => (prev < matchingHistory.length - 1 ? prev + 1 : prev));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex(prev => (prev > -1 ? prev - 1 : -1));
@@ -105,6 +105,10 @@ function PageShell({ title, description, children }) {
       setSelectedIndex(-1);
     }
   };
+
+  const matchingHistory = searchHistory.filter((item) =>
+    item.toLowerCase().includes(searchQuery.trim().toLowerCase())
+  );
 
   const SearchBar = ({ isMobile }) => (
     <div className={`relative w-full ${isMobile ? "" : "max-w-xl mx-8"}`} ref={isMobile ? null : searchContainerRef}>
@@ -161,7 +165,7 @@ function PageShell({ title, description, children }) {
       </div>
       
       {/* Search History Dropdown */}
-      {showHistory && searchHistory.length > 0 && (
+      {showHistory && matchingHistory.length > 0 && (
         <div className={`absolute left-0 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden z-50 ${isMobile ? "top-14" : "top-12"}`}>
           <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Recent Searches</span>
@@ -173,7 +177,7 @@ function PageShell({ title, description, children }) {
             </button>
           </div>
           <ul className="py-2" onMouseDown={(e) => e.preventDefault()}>
-            {searchHistory.map((historyItem, idx) => (
+            {matchingHistory.map((historyItem, idx) => (
               <li key={idx}>
                 <button
                   tabIndex={-1}
