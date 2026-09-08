@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Play, Search, X } from "lucide-react";
+import { Play, Search, X, MessageSquare, ListVideo } from "lucide-react";
 import CommentSection from "../components/CommentSection";
 import PageShell from "../components/PageShell";
 import { isSupabaseConfigured, listVideos } from "../lib/supabase";
@@ -10,6 +10,7 @@ import { builtInVideos } from "../data/builtInVideos";
 function Videos() {
   const [query, setQuery] = useState("");
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [activeTab, setActiveTab] = useState("playlist");
   const navigate = useNavigate();
 
   const [videos, setVideos] = useState(() => {
@@ -193,18 +194,64 @@ function Videos() {
               </div>
             </div>
 
-            {/* Right side: Comments Sidebar */}
+            {/* Right side: Tabs Sidebar */}
             <div className="w-full lg:w-[400px] xl:w-[450px] border-l border-slate-200 bg-white flex flex-col h-full lg:max-h-[95vh] shrink-0">
               {/* Desktop header with close button */}
               <div className="hidden lg:flex items-center justify-between border-b border-slate-100 p-4 sticky top-0 bg-white z-10 shadow-sm">
-                <h3 className="font-bold text-slate-900 text-lg">Discussion</h3>
+                <div className="flex bg-slate-100 rounded-lg p-1 space-x-1">
+                  <button
+                    onClick={() => setActiveTab("playlist")}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                      activeTab === "playlist" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    <ListVideo size={16} />
+                    <span>Up Next</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("comments")}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                      activeTab === "comments" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    <MessageSquare size={16} />
+                    <span>Comments</span>
+                  </button>
+                </div>
                 <button type="button" onClick={() => setSelectedVideo(null)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 shadow-sm border border-transparent hover:border-slate-200">
                   <X size={20} />
                 </button>
               </div>
               
-              <div className="p-5 overflow-y-auto flex-1 custom-scrollbar bg-slate-50/50">
-                {selectedVideo.id && <CommentSection videoId={selectedVideo.id} />}
+              <div className="p-0 overflow-y-auto flex-1 custom-scrollbar bg-slate-50/50">
+                {activeTab === "comments" ? (
+                  <div className="p-5">
+                    {selectedVideo.id && <CommentSection videoId={selectedVideo.id} />}
+                  </div>
+                ) : (
+                  <div className="flex flex-col p-3 gap-3">
+                    {filteredVideos.filter(v => v.id !== selectedVideo.id).map((video, idx) => (
+                      <div
+                        key={video.id || idx}
+                        onClick={() => setSelectedVideo(video)}
+                        className="flex gap-3 group cursor-pointer bg-white p-2 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200 shadow-sm"
+                      >
+                        <div className="relative w-32 h-20 shrink-0 rounded-lg overflow-hidden bg-slate-900">
+                          <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">
+                            {video.duration}
+                          </span>
+                        </div>
+                        <div className="flex flex-col py-1 overflow-hidden">
+                          <h4 className="text-sm font-bold text-slate-900 leading-tight line-clamp-2 group-hover:text-red-600 transition-colors">
+                            {video.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1 truncate">{video.speaker}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             
