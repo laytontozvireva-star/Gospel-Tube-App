@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Filter, Search, Play, Loader2, ShieldCheck, X, ExternalLink } from "lucide-react";
 import PageShell from "../components/PageShell";
 import { searchYouTubeVideos } from "../lib/youtube";
+import CommentSection from "../components/CommentSection";
 
 const contentFilters = [
   { label: "All", matches: () => true },
@@ -155,41 +156,62 @@ function SearchResults() {
           aria-label={`Playing ${selectedVideo.title}`}
           onClick={() => setSelectedVideo(null)}
         >
-          <div className="w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6">
-              <div className="min-w-0 pr-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-red-600">Now playing</p>
-                <p className="truncate text-sm font-semibold text-slate-700">{selectedVideo.author}</p>
+          <div className="w-full max-w-7xl max-h-[95vh] overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col lg:flex-row" onClick={(event) => event.stopPropagation()}>
+            
+            {/* Left side: Video & Metadata */}
+            <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-slate-50">
+              {/* Mobile header */}
+              <div className="flex lg:hidden items-center justify-between border-b border-slate-200 px-4 py-3 bg-white sticky top-0 z-10">
+                <div className="min-w-0 pr-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-red-600">Now playing</p>
+                  <p className="truncate text-sm font-semibold text-slate-700">{selectedVideo.author}</p>
+                </div>
+                <button type="button" onClick={() => setSelectedVideo(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="Close player">
+                  <X size={21} />
+                </button>
               </div>
-              <button type="button" onClick={() => setSelectedVideo(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="Close player">
-                <X size={21} />
-              </button>
+
+              <div className="aspect-video bg-black sticky top-0 z-0">
+                <iframe
+                  className="h-full w-full"
+                  src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1&rel=0`}
+                  title={selectedVideo.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+
+              <div className="p-5 sm:p-7 bg-white">
+                <h2 className="text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl">{selectedVideo.title}</h2>
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  <span className="font-bold text-slate-700">{selectedVideo.author}</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-500">{selectedVideo.timeAgo}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700"><ShieldCheck size={13} /> GospelTube</span>
+                </div>
+                <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{selectedVideo.description}</p>
+                <a href={selectedVideo.videoUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                  Watch on YouTube <ExternalLink size={15} />
+                </a>
+              </div>
             </div>
 
-            <div className="aspect-video bg-black">
-              <iframe
-                className="h-full w-full"
-                src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1&rel=0`}
-                title={selectedVideo.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
-            </div>
-
-            <div className="max-h-56 overflow-y-auto p-5 sm:p-7">
-              <h2 className="text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl">{selectedVideo.title}</h2>
-              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                <span className="font-bold text-slate-700">{selectedVideo.author}</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-slate-500">{selectedVideo.timeAgo}</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700"><ShieldCheck size={13} /> GospelTube</span>
+            {/* Right side: Comments Sidebar */}
+            <div className="w-full lg:w-[400px] xl:w-[450px] border-l border-slate-200 bg-white flex flex-col h-full lg:max-h-[95vh] shrink-0">
+              {/* Desktop header with close button */}
+              <div className="hidden lg:flex items-center justify-between border-b border-slate-100 p-4 sticky top-0 bg-white z-10 shadow-sm">
+                <h3 className="font-bold text-slate-900 text-lg">Discussion</h3>
+                <button type="button" onClick={() => setSelectedVideo(null)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 shadow-sm border border-transparent hover:border-slate-200">
+                  <X size={20} />
+                </button>
               </div>
-              <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{selectedVideo.description}</p>
-              <a href={selectedVideo.videoUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700">
-                Watch on YouTube <ExternalLink size={15} />
-              </a>
+              
+              <div className="p-5 overflow-y-auto flex-1 custom-scrollbar bg-slate-50/50">
+                <CommentSection videoId={selectedVideo.id} />
+              </div>
             </div>
+            
           </div>
         </div>
       )}

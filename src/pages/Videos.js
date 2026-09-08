@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Play, Search, X } from "lucide-react";
+import CommentSection from "../components/CommentSection";
 import PageShell from "../components/PageShell";
 import { isSupabaseConfigured, listVideos } from "../lib/supabase";
 import { motion } from "framer-motion";
@@ -145,18 +146,68 @@ function Videos() {
       )}
 
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative flex flex-col max-h-screen">
-            <button
-              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-black/80 text-white rounded-full transition-colors"
-              onClick={() => setSelectedVideo(null)}
-            >
-              <X size={18} />
-            </button>
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-2">{selectedVideo.title}</h2>
-              <p className="text-slate-600">{selectedVideo.speaker} • {selectedVideo.duration}</p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-3 sm:p-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Playing ${selectedVideo.title}`}
+          onClick={() => setSelectedVideo(null)}
+        >
+          <div className="w-full max-w-7xl max-h-[95vh] overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col lg:flex-row" onClick={(event) => event.stopPropagation()}>
+            
+            {/* Left side: Video & Metadata */}
+            <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-slate-50">
+              {/* Mobile header */}
+              <div className="flex lg:hidden items-center justify-between border-b border-slate-200 px-4 py-3 bg-white sticky top-0 z-10">
+                <div className="min-w-0 pr-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-red-600">Now playing</p>
+                  <p className="truncate text-sm font-semibold text-slate-700">{selectedVideo.speaker}</p>
+                </div>
+                <button type="button" onClick={() => setSelectedVideo(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="Close player">
+                  <X size={21} />
+                </button>
+              </div>
+
+              <div className="aspect-video bg-black sticky top-0 z-0">
+                <iframe
+                  className="h-full w-full"
+                  src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1&rel=0`}
+                  title={selectedVideo.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+
+              <div className="p-5 sm:p-7 bg-white">
+                <h2 className="text-xl font-extrabold leading-tight text-slate-900 sm:text-2xl">{selectedVideo.title}</h2>
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  <span className="font-bold text-slate-700">{selectedVideo.speaker}</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-500">{selectedVideo.duration}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700">GospelTube</span>
+                </div>
+                {selectedVideo.description && (
+                  <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{selectedVideo.description}</p>
+                )}
+              </div>
             </div>
+
+            {/* Right side: Comments Sidebar */}
+            <div className="w-full lg:w-[400px] xl:w-[450px] border-l border-slate-200 bg-white flex flex-col h-full lg:max-h-[95vh] shrink-0">
+              {/* Desktop header with close button */}
+              <div className="hidden lg:flex items-center justify-between border-b border-slate-100 p-4 sticky top-0 bg-white z-10 shadow-sm">
+                <h3 className="font-bold text-slate-900 text-lg">Discussion</h3>
+                <button type="button" onClick={() => setSelectedVideo(null)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 shadow-sm border border-transparent hover:border-slate-200">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-5 overflow-y-auto flex-1 custom-scrollbar bg-slate-50/50">
+                {selectedVideo.id && <CommentSection videoId={selectedVideo.id} />}
+              </div>
+            </div>
+            
           </div>
         </div>
       )}

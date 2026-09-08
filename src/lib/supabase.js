@@ -47,6 +47,37 @@ export async function uploadMedia(file, bucket) {
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
+export async function listComments(videoId) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, content, created_at, user_id, users(name, avatar_url)')
+    .eq('video_id', videoId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addComment(videoId, content) {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('You must be signed in to comment.');
+  const { data, error } = await supabase.from('comments').insert({
+    video_id: videoId,
+    user_id: user.id,
+    content,
+  }).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteComment(commentId) {
+  if (!supabase) return null;
+  const { error } = await supabase.from('comments').delete().eq('id', commentId);
+  if (error) throw error;
+  return true;
+}
+
 export async function getNotifications() {
   if (!supabase) return [];
   const { data, error } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(20);
