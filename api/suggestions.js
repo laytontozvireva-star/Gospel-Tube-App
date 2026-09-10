@@ -1,5 +1,8 @@
 // Proxies YouTube search suggestions so the browser has one same-origin API surface.
 export default async function handler(req, res) {
+  // Cache suggestions at the edge for 24 hours
+  res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=604800');
+
   const { q } = req.query;
   if (typeof q !== "string" || q.trim().length < 2) {
     return res.status(200).json([]);

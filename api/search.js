@@ -9,6 +9,9 @@ const gospelKeywords = [
 ];
 
 export default async function handler(req, res) {
+  // Cache the response at the edge (CDN) for 2 hours, and allow stale data for 24 hours while revalidating
+  res.setHeader('Cache-Control', 's-maxage=7200, stale-while-revalidate=86400');
+
   const { q, max } = req.query;
   const apiKey = process.env.YOUTUBE_API_KEY;
 

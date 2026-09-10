@@ -14,10 +14,10 @@ import {
   TrendingUp,
   Clock,
   Heart,
-  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import PageShell from "../components/PageShell";
+import VideoModal from "../components/VideoModal";
 import { searchYouTubeVideos } from "../lib/youtube";
 
 // ── Categories for YouTube search filtering ─────────────────────────
@@ -524,65 +524,13 @@ function Home() {
         </div>
       </section>
 
-      {/* ══════════ VIDEO PLAYER MODAL ══════════ */}
       {selectedVideo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          onClick={() => setSelectedVideo(null)}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-black/80 text-white rounded-full transition-colors"
-              onClick={() => setSelectedVideo(null)}
-            >
-              ×
-            </button>
-            <div className="aspect-video bg-black">
-              <iframe
-                src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1`}
-                title={selectedVideo.title}
-                className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-            <div className="p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold text-slate-900 mb-1">{selectedVideo.title}</h2>
-                  <p className="text-sm text-slate-500 mb-2">{selectedVideo.author} • {selectedVideo.timeAgo}</p>
-                  {selectedVideo.description && (
-                    <p className="text-sm text-slate-600 line-clamp-2">{selectedVideo.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => toggleLike(selectedVideo.id)}
-                    className={`p-2 rounded-full transition-colors ${likedIds.includes(selectedVideo.id) ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
-                  >
-                    <Heart size={18} className={likedIds.includes(selectedVideo.id) ? "fill-red-500" : ""} />
-                  </button>
-                  <a
-                    href={selectedVideo.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
-                    title="Open on YouTube"
-                  >
-                    <ExternalLink size={18} />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+        <VideoModal 
+          video={selectedVideo} 
+          onClose={() => setSelectedVideo(null)} 
+          relatedVideos={latestVideos.filter(v => v.id !== selectedVideo.id)} 
+          onSelectRelated={setSelectedVideo} 
+        />
       )}
     </PageShell>
   );

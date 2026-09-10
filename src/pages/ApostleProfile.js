@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Play, ArrowLeft, Loader2 } from "lucide-react";
 import PageShell from "../components/PageShell";
 import { searchYouTubeVideos } from "../lib/youtube";
+import VideoModal from "../components/VideoModal";
 import { motion } from "framer-motion";
 
 function ApostleProfile() {
@@ -118,49 +119,14 @@ function ApostleProfile() {
         </div>
       )}
 
-      {/* Video Modal Player — Embedded YouTube */}
+      {/* Video Modal Player */}
       {selectedVideo && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          onClick={() => setSelectedVideo(null)}
-        >
-          <div 
-            className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button 
-              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-black/80 text-white rounded-full transition-colors"
-              onClick={() => setSelectedVideo(null)}
-            >
-              ×
-            </button>
-            <div className="aspect-video bg-black">
-              <iframe
-                src={`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1`}
-                title={selectedVideo.title}
-                className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">{selectedVideo.title}</h2>
-              <p className="text-sm text-slate-500 mb-3">{selectedVideo.author} • {selectedVideo.timeAgo}</p>
-              {selectedVideo.description && (
-                <p className="text-sm text-slate-600 line-clamp-3 mb-4">{selectedVideo.description}</p>
-              )}
-              <a 
-                href={selectedVideo.videoUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-bold text-red-600 hover:text-red-700 transition-colors"
-              >
-                Watch on YouTube →
-              </a>
-            </div>
-          </div>
-        </div>
+        <VideoModal 
+          video={selectedVideo} 
+          onClose={() => setSelectedVideo(null)} 
+          relatedVideos={videos.filter(v => v.id !== selectedVideo.id)} 
+          onSelectRelated={setSelectedVideo} 
+        />
       )}
     </PageShell>
   );
