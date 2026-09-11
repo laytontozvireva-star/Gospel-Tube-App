@@ -14,6 +14,8 @@ import SearchResults from "./pages/SearchResults";
 import UploadVideo from "./pages/UploadVideo";
 import ImportCsv from "./pages/ImportCsv";
 
+import MiniPlayerContainer from "./components/MiniPlayerContainer";
+
 function App() {
   return (
     <BrowserRouter>
@@ -32,6 +34,7 @@ function App() {
         <Route path="/upload" element={<UploadVideo />} />
         <Route path="/import" element={<ImportCsv />} />
       </Routes>
+      <MiniPlayerContainer />
     </BrowserRouter>
   );
 }

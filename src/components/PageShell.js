@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Menu,
-  Play,
   Search,
   X,
   Home as HomeIcon,
@@ -276,9 +275,11 @@ function PageShell({ title, description, children }) {
               </button>
 
               <Link to="/" className="flex items-center gap-2 group">
-                <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-500/30 group-hover:bg-red-700 transition-colors">
-                  <Play size={16} className="fill-white translate-x-0.5" />
-                </div>
+                <img
+                  src="/gospeltube-logo.png"
+                  alt="GospelTube"
+                  className="w-8 h-8 rounded-full object-cover shadow-md shadow-red-500/30 transition-transform group-hover:scale-105"
+                />
                 <span className="font-extrabold text-xl tracking-tight text-slate-900 hidden sm:inline">
                   GOSPEL<span className="text-red-600">TUBE</span>
                 </span>
@@ -389,4 +390,3 @@ function PageShell({ title, description, children }) {
 }
 
 export default PageShell;
-
