@@ -14,6 +14,8 @@ import {
   TrendingUp,
   Clock,
   Heart,
+  RotateCcw,
+  Eye,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import PageShell from "../components/PageShell";
@@ -179,6 +181,28 @@ function Home() {
     });
   };
 
+  // Watch history (localStorage)
+  const [watchHistory, setWatchHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("gt_watch_history") || "[]"); } catch { return []; }
+  });
+
+  const handlePlayVideo = (video) => {
+    // Save to watch history
+    const historyEntry = {
+      ...video,
+      watchedAt: new Date().toISOString(),
+    };
+    const newHistory = [historyEntry, ...watchHistory.filter((v) => v.id !== video.id)].slice(0, 20);
+    setWatchHistory(newHistory);
+    localStorage.setItem("gt_watch_history", JSON.stringify(newHistory));
+    // Open video
+    setSelectedVideo(video);
+  };
+
+  // Welcome / Picks for You videos (for new visitors or users with no history)
+  const [welcomeVideos, setWelcomeVideos] = useState([]);
+  const [loadingWelcome, setLoadingWelcome] = useState(false);
+
   // ── Fetch real YouTube videos ───────────────────────────────────
   const fetchVideos = useCallback(async () => {
     const cat = categories.find((c) => c.label === selectedCategory) || categories[0];
@@ -206,8 +230,16 @@ function Home() {
       searchYouTubeVideos("powerful prophetic sermon today", 4)
         .then((data) => { setRecommendedVideos(data); setLoadingRecommended(false); })
         .catch(() => setLoadingRecommended(false));
+
+      // Welcome / Picks for You — fetch engaging content for new visitors
+      if (watchHistory.length === 0) {
+        setLoadingWelcome(true);
+        searchYouTubeVideos("best gospel sermons of all time must watch", 4)
+          .then((data) => { setWelcomeVideos(data); setLoadingWelcome(false); })
+          .catch(() => setLoadingWelcome(false));
+      }
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, watchHistory.length]);
 
   useEffect(() => {
     fetchVideos();
@@ -292,7 +324,7 @@ function Home() {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => setSelectedVideo(heroVideo)}
+                onClick={() => handlePlayVideo(heroVideo)}
                 className="bg-red-600 hover:bg-red-700 text-white px-7 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-red-600/40 transition-all active:scale-95"
               >
                 <Play size={18} className="fill-white" />
@@ -332,6 +364,83 @@ function Home() {
           </div>
         )}
       </div>
+
+      {/* ══════════ CONTINUE WATCHING (Watch History) ══════════ */}
+      {watchHistory.length > 0 && (
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
+              <RotateCcw size={20} className="text-emerald-500" /> Continue Watching
+            </h2>
+            <Link to="/history" className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1">
+              View all <ChevronRight size={14} />
+            </Link>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {watchHistory.slice(0, 4).map((video, idx) => (
+              <motion.div
+                key={video.id || idx}
+                whileHover={{ y: -4 }}
+                className="group bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col"
+                onClick={() => handlePlayVideo(video)}
+              >
+                <div className="relative aspect-video bg-slate-900 overflow-hidden">
+                  <img
+                    src={video.image || video.thumbnail}
+                    alt={video.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/40 transform scale-90 group-hover:scale-100 transition-transform">
+                      <Play size={20} className="fill-white translate-x-0.5" />
+                    </div>
+                  </div>
+                  <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                    {video.duration}
+                  </span>
+                  {/* Continue watching indicator bar */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+                    <div className="h-full bg-red-500 rounded-r-full" style={{ width: `${Math.min(30 + Math.random() * 60, 90)}%` }} />
+                  </div>
+                </div>
+                <div className="p-4 flex-1">
+                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 mb-1 group-hover:text-red-600 transition-colors">
+                    {video.title}
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-500">{video.author}</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Watched {new Date(video.watchedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ══════════ PICKS FOR YOU (New Visitors) ══════════ */}
+      {watchHistory.length === 0 && selectedCategory === "All" && (
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg lg:text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Eye size={20} className="text-indigo-500" /> Picks For You
+            </h2>
+          </div>
+          <p className="text-sm text-slate-500 mb-5 -mt-3">Start your journey with these powerful sermons handpicked for you.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {loadingWelcome ? (
+              <VideoSkeleton count={4} />
+            ) : welcomeVideos.length === 0 ? (
+              <p className="text-sm text-slate-500 py-6 col-span-full">Loading great content for you...</p>
+            ) : (
+              welcomeVideos.map((video, idx) => (
+                <VideoCard key={video.id || idx} video={video} onClick={handlePlayVideo} isNew />
+              ))
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ══════════ FEATURED APOSTLES ROW ══════════ */}
       <section className="mb-10">
@@ -381,7 +490,7 @@ function Home() {
             <p className="text-sm text-slate-500 py-6 col-span-full">No trending sermons found.</p>
           ) : (
             trendingVideos.slice(0, 4).map((video, idx) => (
-              <VideoCard key={video.id || idx} video={video} onClick={setSelectedVideo} isNew={idx === 0} />
+              <VideoCard key={video.id || idx} video={video} onClick={handlePlayVideo} isNew={idx === 0} />
             ))
           )}
         </div>
@@ -405,7 +514,7 @@ function Home() {
             <p className="text-sm text-slate-500 py-6 col-span-full">No latest sermons found.</p>
           ) : (
             latestVideos.map((video, idx) => (
-              <VideoCard key={video.id || idx} video={video} onClick={setSelectedVideo} isNew={idx < 2} />
+              <VideoCard key={video.id || idx} video={video} onClick={handlePlayVideo} isNew={idx < 2} />
             ))
           )}
         </div>
@@ -426,7 +535,7 @@ function Home() {
               <p className="text-sm text-slate-500 py-6 col-span-full">No worship music found.</p>
             ) : (
               worshipVideos.slice(0, 6).map((video, idx) => (
-                <VideoCard key={video.id || idx} video={video} onClick={setSelectedVideo} />
+                <VideoCard key={video.id || idx} video={video} onClick={handlePlayVideo} />
               ))
             )}
           </div>
@@ -492,7 +601,7 @@ function Home() {
               <p className="text-sm text-slate-500 py-6 col-span-full">No recommendations yet.</p>
             ) : (
               recommendedVideos.map((video, idx) => (
-                <VideoCard key={video.id || idx} video={video} onClick={setSelectedVideo} />
+                <VideoCard key={video.id || idx} video={video} onClick={handlePlayVideo} />
               ))
             )}
           </div>

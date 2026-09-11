@@ -100,30 +100,49 @@ export default function VideoModal({ video, onClose, relatedVideos = [], onSelec
               </div>
             ) : (
               <div className="flex flex-col p-3 gap-3">
-                {relatedVideos.length > 0 ? relatedVideos.map((relVideo, idx) => (
+                {relatedVideos.length > 0 ? relatedVideos.map((relVideo, idx) => {
+                  const isPlaying = relVideo.id === video.id;
+                  return (
                   <div
                     key={relVideo.id || idx}
                     onClick={() => {
-                       if (onSelectRelated) onSelectRelated(relVideo);
+                       if (!isPlaying && onSelectRelated) onSelectRelated(relVideo);
                        // Scroll to top on mobile when selecting related video
-                       document.querySelector('.custom-scrollbar').scrollTo({top: 0, behavior: 'smooth'});
+                       if (!isPlaying) document.querySelector('.custom-scrollbar')?.scrollTo({top: 0, behavior: 'smooth'});
                     }}
-                    className={`flex gap-3 group bg-white p-2.5 rounded-xl active:bg-slate-100 transition-colors border border-transparent shadow-sm ${onSelectRelated ? 'cursor-pointer' : ''}`}
+                    className={`flex gap-3 group p-2.5 rounded-xl transition-colors border shadow-sm ${
+                      isPlaying
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-white active:bg-slate-100 border-transparent'
+                    } ${onSelectRelated && !isPlaying ? 'cursor-pointer' : ''}`}
                   >
                     <div className="relative w-36 h-20 shrink-0 rounded-lg overflow-hidden bg-slate-900">
                       <img src={relVideo.thumbnail || relVideo.image} alt={relVideo.title} className="w-full h-full object-cover" />
                       <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">
                         {relVideo.duration || relVideo.timeAgo}
                       </span>
+                      {isPlaying && (
+                        <div className="absolute inset-0 bg-red-600/20 flex items-center justify-center">
+                          <div className="flex gap-1">
+                            <span className="w-1 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                            <span className="w-1 h-4 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                            <span className="w-1 h-2 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col overflow-hidden justify-center">
-                      <h4 className="text-sm font-bold text-slate-900 leading-tight line-clamp-2">
+                      <h4 className={`text-sm font-bold leading-tight line-clamp-2 transition-colors ${
+                        isPlaying ? 'text-red-700' : 'text-slate-900'
+                      }`}>
                         {relVideo.title}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-1 truncate">{relVideo.speaker || relVideo.author}</p>
+                      <p className={`text-xs mt-1 truncate ${isPlaying ? 'text-red-600/70' : 'text-slate-500'}`}>
+                        {relVideo.speaker || relVideo.author}
+                      </p>
                     </div>
                   </div>
-                )) : (
+                )}) : (
                    <p className="text-slate-500 text-sm p-4 text-center">No related videos.</p>
                 )}
               </div>
@@ -181,28 +200,47 @@ export default function VideoModal({ video, onClose, relatedVideos = [], onSelec
               </div>
             ) : (
               <div className="flex flex-col p-3 gap-3">
-                {relatedVideos.length > 0 ? relatedVideos.map((relVideo, idx) => (
+                {relatedVideos.length > 0 ? relatedVideos.map((relVideo, idx) => {
+                  const isPlaying = relVideo.id === video.id;
+                  return (
                   <div
                     key={relVideo.id || idx}
                     onClick={() => {
-                       if (onSelectRelated) onSelectRelated(relVideo);
+                       if (!isPlaying && onSelectRelated) onSelectRelated(relVideo);
                     }}
-                    className={`flex gap-3 group bg-white p-2 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200 shadow-sm ${onSelectRelated ? 'cursor-pointer' : ''}`}
+                    className={`flex gap-3 group p-2 rounded-xl transition-colors border shadow-sm ${
+                      isPlaying 
+                        ? 'bg-red-50 border-red-200' 
+                        : 'bg-white hover:bg-slate-50 border-transparent hover:border-slate-200'
+                    } ${onSelectRelated && !isPlaying ? 'cursor-pointer' : ''}`}
                   >
                     <div className="relative w-32 h-20 shrink-0 rounded-lg overflow-hidden bg-slate-900">
                       <img src={relVideo.thumbnail || relVideo.image} alt={relVideo.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-xs">
                         {relVideo.duration || relVideo.timeAgo}
                       </span>
+                      {isPlaying && (
+                        <div className="absolute inset-0 bg-red-600/20 flex items-center justify-center">
+                          <div className="flex gap-1">
+                            <span className="w-1 h-3 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                            <span className="w-1 h-4 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                            <span className="w-1 h-2 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col py-1 overflow-hidden">
-                      <h4 className="text-sm font-bold text-slate-900 leading-tight line-clamp-2 group-hover:text-red-600 transition-colors">
+                      <h4 className={`text-sm font-bold leading-tight line-clamp-2 transition-colors ${
+                        isPlaying ? 'text-red-700' : 'text-slate-900 group-hover:text-red-600'
+                      }`}>
                         {relVideo.title}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-1 truncate">{relVideo.speaker || relVideo.author}</p>
+                      <p className={`text-xs mt-1 truncate ${isPlaying ? 'text-red-600/70' : 'text-slate-500'}`}>
+                        {relVideo.speaker || relVideo.author}
+                      </p>
                     </div>
                   </div>
-                )) : (
+                )}) : (
                    <p className="text-slate-500 text-sm p-4 text-center">No related videos.</p>
                 )}
               </div>
