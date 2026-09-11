@@ -5,13 +5,16 @@ import PageShell from "../components/PageShell";
 import { searchYouTubeVideos } from "../lib/youtube";
 import VideoModal from "../components/VideoModal";
 import { motion } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
 
 function ApostleProfile() {
   const { name } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [subscribed, setSubscribed] = useState(false);
 
   // Decoding the name from URL
   const apostleName = decodeURIComponent(name || "");
@@ -62,8 +65,21 @@ function ApostleProfile() {
             Join {apostleName} for powerful teachings, deep biblical insights, and inspiring sermons designed to strengthen your faith and daily walk.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
-            <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl font-bold transition-colors shadow-md shadow-red-600/20">
-              Subscribe
+            <button 
+              onClick={() => {
+                if (!user) {
+                  alert("Please sign in to subscribe.");
+                  return;
+                }
+                setSubscribed(!subscribed);
+              }}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-colors shadow-md ${
+                subscribed 
+                  ? "bg-slate-200 hover:bg-slate-300 text-slate-800" 
+                  : "bg-red-600 hover:bg-red-700 text-white shadow-red-600/20"
+              }`}
+            >
+              {subscribed ? "Subscribed ✓" : "Subscribe"}
             </button>
             <button className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-6 py-2.5 rounded-xl font-bold transition-colors">
               Share Profile

@@ -507,7 +507,11 @@ function Home() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <button
-            className="bg-red-600 hover:bg-red-700 text-white px-7 py-3 rounded-2xl font-bold text-sm shadow-md shadow-red-600/30 transition-all active:scale-95"
+            className={`px-7 py-3 rounded-2xl font-bold text-sm shadow-md transition-all active:scale-95 ${
+              subscribed
+                ? "bg-slate-200 hover:bg-slate-300 text-slate-800"
+                : "bg-red-600 hover:bg-red-700 text-white shadow-red-600/30"
+            }`}
             onClick={() => {
               if (!user) {
                 alert("Please sign in");
