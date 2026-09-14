@@ -21,6 +21,7 @@ import { useAuth } from "../context/AuthContext";
 import PageShell from "../components/PageShell";
 import VideoModal from "../components/VideoModal";
 import { searchYouTubeVideos } from "../lib/youtube";
+import { isSupabaseConfigured } from "../lib/supabase";
 
 // ── Categories for YouTube search filtering ─────────────────────────
 const categories = [
@@ -173,12 +174,25 @@ function Home() {
   const [likedIds, setLikedIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem("gt_liked") || "[]"); } catch { return []; }
   });
-  const toggleLike = (videoId) => {
+  
+  const handleToggleLike = async (videoId) => {
+    // Optimistic local update
     setLikedIds((prev) => {
       const next = prev.includes(videoId) ? prev.filter((id) => id !== videoId) : [...prev, videoId];
       localStorage.setItem("gt_liked", JSON.stringify(next));
       return next;
     });
+
+    // Remote update
+    if (isSupabaseConfigured && user) {
+      try {
+        const { toggleLike } = await import("../lib/supabase");
+        await toggleLike(videoId);
+      } catch (err) {
+        console.error("Failed to toggle like", err);
+        // We could revert optimistic update here if desired
+      }
+    }
   };
 
   // Watch history (localStorage)
@@ -332,7 +346,7 @@ function Home() {
               </button>
               <button
                 type="button"
-                onClick={() => toggleLike(heroVideo.id)}
+                onClick={() => handleToggleLike(heroVideo.id)}
                 className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl font-semibold text-sm transition-all flex items-center gap-2"
               >
                 <Heart size={16} className={likedIds.includes(heroVideo.id) ? "fill-red-500 text-red-500" : ""} />

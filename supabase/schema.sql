@@ -105,6 +105,80 @@ create policy "Users manage their history" on public.watch_history for all using
 create policy "Users read their notifications" on public.notifications for select using (user_id = auth.uid());
 create policy "Users update their notifications" on public.notifications for update using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+create policy "Public can read profiles" on public.profiles for select using (true);
+
+create table public.comments (
+  id uuid primary key default gen_random_uuid(),
+  video_id uuid not null references public.videos(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  content text not null check (char_length(content) >= 1),
+  created_at timestamptz not null default now()
+);
+
+create index comments_video_created_idx on public.comments (video_id, created_at desc);
+
+alter table public.comments enable row level security;
+
+create policy "Public can read comments" on public.comments
+  for select using (true);
+
+create policy "Users can add comments" on public.comments
+  for insert with check (user_id = auth.uid());
+
+create policy "Users can delete own comments" on public.comments
+  for delete using (user_id = auth.uid());
+
+create table public.subscriptions (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  apostle_id uuid not null references public.apostles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, apostle_id)
+);
+
+alter table public.subscriptions enable row level security;
+
+create policy "Public can read subscriptions" on public.subscriptions
+  for select using (true);
+
+create policy "Users manage their subscriptions" on public.subscriptions
+  for insert with check (user_id = auth.uid());
+
+create policy "Users can unsubscribe" on public.subscriptions
+  for delete using (user_id = auth.uid());
+
+-- RPC function to atomically increment a video's view count.
+create or replace function public.increment_view_count(video_uuid uuid)
+returns void
+language sql
+security definer
+as $$
+  update public.videos
+  set views_count = views_count + 1
+  where id = video_uuid;
+$$;
+
+-- Trigger: auto-create a profile row when a new user registers via Supabase Auth.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name, avatar_url)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  return new;
+end;
+$$;
+
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
 insert into storage.buckets (id, name, public) values ('videos', 'videos', true) on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('thumbnails', 'thumbnails', true) on conflict (id) do nothing;
 

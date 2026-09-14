@@ -1,11 +1,53 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import ReactPlayer from "react-player";
 import { X, MessageSquare, ListVideo, Minimize2 } from "lucide-react";
 import CommentSection from "./CommentSection";
 import { useVideoPlayer } from "../context/VideoPlayerContext";
+import { isSupabaseConfigured, upsertWatchProgress, incrementViewCount } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+
+// Track which videos have been view-counted this session to avoid double-counting
+const viewedThisSession = new Set();
 
 export default function VideoModal({ video, onClose, relatedVideos = [], onSelectRelated }) {
   const [activeTab, setActiveTab] = useState("playlist");
   const { minimize } = useVideoPlayer();
+  const { user } = useAuth();
+  const recordedRef = useRef(false);
+
+  // Record watch history and increment view count when video opens
+  useEffect(() => {
+    if (!video || recordedRef.current) return;
+    recordedRef.current = true;
+
+    if (isSupabaseConfigured && user && video.id) {
+      // Record watch history
+      upsertWatchProgress(video.id, 0).catch((err) =>
+        console.error("Failed to record watch history", err)
+      );
+
+      // Increment view count (once per session per video)
+      if (!viewedThisSession.has(video.id)) {
+        viewedThisSession.add(video.id);
+        incrementViewCount(video.id).catch((err) =>
+          console.error("Failed to increment view count", err)
+        );
+      }
+    }
+
+    // Also save to localStorage for fallback
+    try {
+      const history = JSON.parse(localStorage.getItem("gt_watch_history") || "[]");
+      const entry = { ...video, watchedAt: new Date().toISOString() };
+      const updated = [entry, ...history.filter((v) => v.id !== video.id)].slice(0, 50);
+      localStorage.setItem("gt_watch_history", JSON.stringify(updated));
+    } catch {}
+  }, [video, user]);
+
+  // Reset ref when video changes
+  useEffect(() => {
+    recordedRef.current = false;
+  }, [video?.id]);
 
   if (!video) return null;
 
@@ -45,13 +87,22 @@ export default function VideoModal({ video, onClose, relatedVideos = [], onSelec
         <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-slate-50 relative">
           
           <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-sm">
-            <iframe
-              className="h-full w-full"
-              src={`https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`}
-              title={video.title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
+            <ReactPlayer
+              url={`https://www.youtube.com/watch?v=${video.id}`}
+              width="100%"
+              height="100%"
+              playing={true}
+              controls={true}
+              onEnded={() => {
+                if (relatedVideos && relatedVideos.length > 0 && onSelectRelated) {
+                  onSelectRelated(relatedVideos[0]);
+                }
+              }}
+              config={{
+                youtube: {
+                  playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
+                }
+              }}
             />
           </div>
 

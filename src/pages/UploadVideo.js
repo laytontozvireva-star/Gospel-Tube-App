@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, ImagePlus, UploadCloud, Video } from "lucide-react";
 import PageShell from "../components/PageShell";
-import { createVideo, isSupabaseConfigured, uploadMedia } from "../lib/supabase";
+import { createVideo, isSupabaseConfigured, uploadMedia, listApostles, listPlaylists } from "../lib/supabase";
 
 function UploadVideo() {
-  const [form, setForm] = useState({ title: "", description: "", apostle: "Apostle Ezekiel Guti", playlist: "", tags: "" });
+  const [form, setForm] = useState({ title: "", description: "", apostle: "", playlist: "", tags: "" });
+  const [apostles, setApostles] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
   const [videoName, setVideoName] = useState("");
   const [thumbnailName, setThumbnailName] = useState("");
   const [videoFile, setVideoFile] = useState(null);
@@ -14,7 +16,14 @@ function UploadVideo() {
   const [published, setPublished] = useState(false);
 
   const update = (event) => setForm({ ...form, [event.target.name]: event.target.value });
-  
+
+  // Load apostles and playlists dynamically from Supabase
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    listApostles().then(setApostles).catch(() => {});
+    listPlaylists().then(setPlaylists).catch(() => {});
+  }, []);
+
   const submit = async (event) => {
     event.preventDefault();
     setError("");
@@ -25,15 +34,26 @@ function UploadVideo() {
           videoFile ? uploadMedia(videoFile, "videos") : null, 
           thumbnailFile ? uploadMedia(thumbnailFile, "thumbnails") : null
         ]);
-        await createVideo({ 
+        const apostleObj = apostles.find(a => a.name === form.apostle);
+        const newVideo = await createVideo({ 
           title: form.title, 
           description: form.description, 
           category: "Sermon", 
           tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean), 
           video_url: videoUrl, 
           thumbnail_url: thumbnailUrl, 
-          status: "published" 
+          status: "published",
+          apostle_id: apostleObj ? apostleObj.id : null
         });
+        
+        // If a playlist was selected, add the video to it
+        if (form.playlist) {
+          const plObj = playlists.find(p => p.name === form.playlist || p.id === form.playlist);
+          if (plObj) {
+            const { addVideoToPlaylist } = await import("../lib/supabase");
+            await addVideoToPlaylist(plObj.id, newVideo.id).catch(e => console.error("Failed to add to playlist", e));
+          }
+        }
       }
     } catch (submitError) {
       setError(submitError.message || "Unable to save this video.");
@@ -157,10 +177,17 @@ function UploadVideo() {
                     onChange={update}
                     className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all bg-white"
                   >
-                    <option>Apostle Ezekiel Guti</option>
-                    <option>Apostle Paul</option>
-                    <option>Apostle Peter</option>
-                    <option>Apostle John</option>
+                    <option value="">Select an apostle</option>
+                    {apostles.length > 0 ? (
+                      apostles.map(a => <option key={a.id} value={a.name}>{a.name}</option>)
+                    ) : (
+                      <>
+                        <option>Apostle Ezekiel Guti</option>
+                        <option>Apostle Paul</option>
+                        <option>Apostle Peter</option>
+                        <option>Apostle John</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 <div>
@@ -172,9 +199,15 @@ function UploadVideo() {
                     className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all bg-white"
                   >
                     <option value="">Select playlist</option>
-                    <option>Faith Teachings</option>
-                    <option>Prayer Teachings</option>
-                    <option>Holy Spirit Series</option>
+                    {playlists.length > 0 ? (
+                      playlists.map(p => <option key={p.id} value={p.id}>{p.name}</option>)
+                    ) : (
+                      <>
+                        <option value="Faith Teachings">Faith Teachings</option>
+                        <option value="Prayer Teachings">Prayer Teachings</option>
+                        <option value="Holy Spirit Series">Holy Spirit Series</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>
