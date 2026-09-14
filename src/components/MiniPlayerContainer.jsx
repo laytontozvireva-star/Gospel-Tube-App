@@ -7,9 +7,9 @@ export default function MiniPlayerContainer() {
   const { expand, miniVideo } = useVideoPlayer();
   const [expandedVideo, setExpandedVideo] = useState(null);
 
-  const handleExpand = () => {
-    const video = expand();
-    setExpandedVideo(video);
+  const handleExpand = (video, startTime) => {
+    const expanded = expand();
+    setExpandedVideo(expanded ? { video: expanded, startTime } : null);
   };
 
   return (
@@ -18,10 +18,11 @@ export default function MiniPlayerContainer() {
       
       {expandedVideo && (
         <VideoModal 
-          video={expandedVideo} 
+          video={expandedVideo.video}
+          startTime={expandedVideo.startTime}
           onClose={() => setExpandedVideo(null)} 
           relatedVideos={[]} // Currently we don't have related videos when expanded from global state, but it plays!
-          onSelectRelated={setExpandedVideo} 
+          onSelectRelated={(video) => setExpandedVideo({ video, startTime: 0 })}
         />
       )}
     </>

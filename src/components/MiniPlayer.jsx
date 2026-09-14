@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import ReactPlayer from "react-player";
 import { X, Maximize2, Minimize2, Play } from "lucide-react";
 import { useVideoPlayer } from "../context/VideoPlayerContext";
 
 export default function MiniPlayer({ onExpand }) {
   const { miniVideo, closeMini } = useVideoPlayer();
   const [collapsed, setCollapsed] = useState(false);
+  const playerRef = useRef(null);
 
   if (!miniVideo) return null;
+
+  const handleExpand = () => {
+    const currentTime = Number(playerRef.current?.currentTime) || 0;
+    onExpand?.(miniVideo, currentTime);
+  };
 
   // Fully collapsed: just a tiny bar
   if (collapsed) {
@@ -33,13 +40,16 @@ export default function MiniPlayer({ onExpand }) {
     <div className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] sm:w-[360px] bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 group">
       {/* Mini video */}
       <div className="relative aspect-video bg-black">
-        <iframe
-          className="h-full w-full"
-          src={`https://www.youtube.com/embed/${miniVideo.id}?autoplay=1&rel=0&modestbranding=1`}
-          title={miniVideo.title}
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
+        <ReactPlayer
+          ref={playerRef}
+          src={`https://www.youtube.com/watch?v=${miniVideo.id}`}
+          width="100%"
+          height="100%"
+          playing={true}
+          controls={true}
+          config={{
+            youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1 } },
+          }}
         />
 
         {/* Hover controls overlay */}
@@ -48,7 +58,7 @@ export default function MiniPlayer({ onExpand }) {
         {/* Top controls */}
         <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => onExpand && onExpand()}
+            onClick={handleExpand}
             className="p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors backdrop-blur-sm"
             title="Expand"
             aria-label="Expand to full player"
@@ -81,7 +91,7 @@ export default function MiniPlayer({ onExpand }) {
           <p className="text-slate-400 text-[11px] truncate">{miniVideo.speaker || miniVideo.author}</p>
         </div>
         <button
-          onClick={() => onExpand && onExpand()}
+          onClick={handleExpand}
           className="shrink-0 text-xs font-bold text-red-500 hover:text-red-400 transition-colors"
         >
           Expand

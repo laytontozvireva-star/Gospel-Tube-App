@@ -9,11 +9,24 @@ import { useAuth } from "../context/AuthContext";
 // Track which videos have been view-counted this session to avoid double-counting
 const viewedThisSession = new Set();
 
-export default function VideoModal({ video, onClose, relatedVideos = [], onSelectRelated }) {
+export default function VideoModal({ video, onClose, relatedVideos = [], onSelectRelated, startTime = 0 }) {
   const [activeTab, setActiveTab] = useState("playlist");
   const { minimize } = useVideoPlayer();
   const { user } = useAuth();
   const recordedRef = useRef(false);
+  const playerRef = useRef(null);
+  const hasResumedRef = useRef(false);
+
+  useEffect(() => {
+    hasResumedRef.current = false;
+  }, [video?.id, startTime]);
+
+  const resumeFromStartTime = () => {
+    if (hasResumedRef.current || !startTime || !playerRef.current) return;
+
+    playerRef.current.currentTime = startTime;
+    hasResumedRef.current = true;
+  };
 
   // Record watch history and increment view count when video opens
   useEffect(() => {
@@ -88,11 +101,13 @@ export default function VideoModal({ video, onClose, relatedVideos = [], onSelec
           
           <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-sm">
             <ReactPlayer
+              ref={playerRef}
               url={`https://www.youtube.com/watch?v=${video.id}`}
               width="100%"
               height="100%"
               playing={true}
               controls={true}
+              onReady={resumeFromStartTime}
               onEnded={() => {
                 if (relatedVideos && relatedVideos.length > 0 && onSelectRelated) {
                   onSelectRelated(relatedVideos[0]);
