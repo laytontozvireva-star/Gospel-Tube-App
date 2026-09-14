@@ -6,9 +6,9 @@ import { searchYouTubeVideos } from "../lib/youtube";
 import VideoModal from "../components/VideoModal";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { isSupabaseConfigured, listApostles, subscribeToApostle, unsubscribeFromApostle, isSubscribed as checkSubscribed, getSubscriptionCount, getApostleStats } from "../lib/supabase";
-import { Heart } from "lucide-react";
-import CommentSection from "../components/CommentSection";
+import { isSupabaseConfigured, listApostles, subscribeToApostle, unsubscribeFromApostle, isSubscribed as checkSubscribed, getSubscriptionCount } from "../lib/supabase";
+
+
 
 function ApostleProfile() {
   const { name } = useParams();

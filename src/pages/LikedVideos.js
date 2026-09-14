@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PageShell from "../components/PageShell";
-import { useNavigate } from "react-router-dom";
-import { Heart, Play, Loader2, Trash2 } from "lucide-react";
+
+import { Heart, Play, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { isSupabaseConfigured, listLikes, toggleLike } from "../lib/supabase";
 import VideoModal from "../components/VideoModal";

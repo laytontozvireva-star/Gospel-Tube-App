@@ -37,7 +37,7 @@ const exploreItems = [
 
 function Explore() {
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const filteredVideos = selectedCategory
     ? builtInVideos.filter((v) => v.category === selectedCategory)
