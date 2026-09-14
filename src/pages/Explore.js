@@ -1,3 +1,4 @@
+import { useState } from "react";
 import PageShell from "../components/PageShell";
 import { Sparkles, Music, BookOpen, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +37,12 @@ const exploreItems = [
 
 function Explore() {
   const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const filteredVideos = selectedCategory
+    ? builtInVideos.filter((v) => v.category === selectedCategory)
+    : builtInVideos;
+
   return (
     <PageShell
       title="Explore Gospel Tube"
@@ -45,7 +52,7 @@ function Explore() {
         {exploreItems.map((item) => (
           <button
             key={item.title}
-            onClick={() => navigate(`/videos?category=${item.categoryKey}`)}
+            onClick={() => setSelectedCategory(item.categoryKey)}
             className={`flex flex-col items-center p-2 rounded-lg ${item.color} hover:scale-105 transition-transform`}
           >
             <item.icon size={24} />
@@ -55,7 +62,7 @@ function Explore() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-        {builtInVideos.map((video) => (
+        {filteredVideos.map((video) => (
           <div
             key={video.id}
             className="group bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer"

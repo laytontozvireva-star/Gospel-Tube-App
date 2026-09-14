@@ -1,4 +1,6 @@
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
+import { listComments, addComment, deleteComment } from "../lib/supabase";
 
 
 export default function CommentSection({ videoId }) {

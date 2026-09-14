@@ -6,7 +6,9 @@ import { searchYouTubeVideos } from "../lib/youtube";
 import VideoModal from "../components/VideoModal";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { isSupabaseConfigured, listApostles, subscribeToApostle, unsubscribeFromApostle, isSubscribed as checkSubscribed, getSubscriptionCount } from "../lib/supabase";
+import { isSupabaseConfigured, listApostles, subscribeToApostle, unsubscribeFromApostle, isSubscribed as checkSubscribed, getSubscriptionCount, getApostleStats } from "../lib/supabase";
+import { Heart } from "lucide-react";
+import CommentSection from "../components/CommentSection";
 
 function ApostleProfile() {
   const { name } = useParams();
@@ -176,7 +178,7 @@ function ApostleProfile() {
         <VideoModal
           video={selectedVideo}
           onClose={() => setSelectedVideo(null)}
-          relatedVideos={videos.filter((v) => v.id !== selectedVideo.id)}
+          allVideos={videos}
           onSelectRelated={setSelectedVideo}
         />
       )}

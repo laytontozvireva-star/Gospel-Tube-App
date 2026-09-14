@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import ReactPlayer from "react-player";
 import { X, MessageSquare, ListVideo, Minimize2 } from "lucide-react";
 import CommentSection from "./CommentSection";
@@ -9,7 +9,12 @@ import { useAuth } from "../context/AuthContext";
 // Track which videos have been view-counted this session to avoid double-counting
 const viewedThisSession = new Set();
 
-export default function VideoModal({ video, onClose, relatedVideos = [], onSelectRelated, startTime = 0 }) {
+export default function VideoModal({ video, onClose, allVideos = [], onSelectRelated, startTime = 0 }) {
+  const relatedVideos = useMemo(() => {
+    if (!video || !Array.isArray(allVideos)) return [];
+    return allVideos.filter((v) => v.id !== video.id);
+  }, [video, allVideos]);
+
   const [activeTab, setActiveTab] = useState("playlist");
   const { minimize } = useVideoPlayer();
   const { user } = useAuth();
