@@ -1,16 +1,14 @@
-﻿/**
+/**
  * GospelTube API Client
  * ─────────────────────
  * Your own API that aggregates gospel content from:
- *   YouTube · Vimeo · Spotify · SoundCloud · Apple Podcasts
- * Plus your own Supabase data (comments, likes, history, playlists, apostles).
- *
- * Base URL: your Supabase project Edge Functions URL
+ *   YouTube · Spotify · Apple Podcasts
  */
 
-const BASE_URL = `${process.env.REACT_APP_SUPABASE_URL}/functions/v1`;
+// Use relative URL so it works locally and on Vercel
+const BASE_URL = "/api";
 
-/** Get the current session auth header from localStorage (Supabase sets this automatically) */
+/** Get the current session auth header from localStorage */
 function authHeader() {
   try {
     const raw = localStorage.getItem(
