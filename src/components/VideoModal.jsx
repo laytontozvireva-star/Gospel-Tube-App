@@ -156,7 +156,9 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
           <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-sm relative">
             <ReactPlayer
               ref={playerRef}
-              url={`https://www.youtube.com/watch?v=${video.id}`}
+              // Use supplied video URL when available (e.g., Spotify, Apple Podcasts)
+              // otherwise fall back to YouTube embed using the video ID
+              url={video.url || `https://www.youtube.com/watch?v=${video.id}`}
               width="100%"
               height="100%"
               playing={true}
