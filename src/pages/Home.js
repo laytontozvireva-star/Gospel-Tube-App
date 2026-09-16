@@ -217,43 +217,65 @@ function Home() {
   const [welcomeVideos, setWelcomeVideos] = useState([]);
   const [loadingWelcome, setLoadingWelcome] = useState(false);
 
-  // ── Fetch real videos via GospelTube Multi-Platform API ───────────
+  // ── Fetch real videos via GospelTube API (with YouTube fallback) ───
   const fetchVideos = useCallback(async () => {
     const cat = categories.find((c) => c.label === selectedCategory) || categories[0];
 
-    // Latest sermons — unified feed (YouTube + Vimeo + Podcasts)
+    // Helper: try gospelApi first, fall back to direct YouTube search
+    const fetchWithFallback = async (apiFn, youtubeQuery, limit) => {
+      try {
+        const data = await apiFn();
+        if (data.results && data.results.length > 0) return data.results;
+        throw new Error("empty");
+      } catch {
+        // Fallback: use direct YouTube search (works with npm start)
+        const { searchYouTubeVideos } = await import("../lib/youtube");
+        return searchYouTubeVideos(youtubeQuery, limit);
+      }
+    };
+
+    // Latest sermons
     setLoadingLatest(true);
-    gospelApi.getFeed({ q: `${cat.query} ${new Date().getFullYear()}`, type: "all", limit: 8 })
-      .then((data) => { setLatestVideos(data.results || []); setLoadingLatest(false); })
-      .catch((err) => { console.error(err); setLoadingLatest(false); });
+    fetchWithFallback(
+      () => gospelApi.getFeed({ q: `${cat.query} ${new Date().getFullYear()}`, type: "all", limit: 8 }),
+      `${cat.query} ${new Date().getFullYear()}`, 8
+    ).then((results) => { setLatestVideos(results); setLoadingLatest(false); })
+     .catch(() => setLoadingLatest(false));
 
-    // Trending sermons (Videos specifically)
+    // Trending sermons
     setLoadingTrending(true);
-    gospelApi.getVideos({ q: `trending ${cat.query}`, source: "all", limit: 8 })
-      .then((data) => { setTrendingVideos(data.results || []); setLoadingTrending(false); })
-      .catch(() => setLoadingTrending(false));
+    fetchWithFallback(
+      () => gospelApi.getVideos({ q: `trending ${cat.query}`, source: "all", limit: 8 }),
+      `trending ${cat.query}`, 8
+    ).then((results) => { setTrendingVideos(results); setLoadingTrending(false); })
+     .catch(() => setLoadingTrending(false));
 
-    // Worship music (always fetch)
+    // Worship music (always fetch on "All")
     if (selectedCategory === "All") {
       setLoadingWorship(true);
-      gospelApi.getMusic({ q: "gospel worship music praise 2025", source: "all", limit: 6 })
-        .then((data) => { setWorshipVideos(data.results || []); setLoadingWorship(false); })
-        .catch(() => setLoadingWorship(false));
+      fetchWithFallback(
+        () => gospelApi.getMusic({ q: "gospel worship music praise 2025", source: "all", limit: 6 }),
+        "gospel worship music praise 2025", 6
+      ).then((results) => { setWorshipVideos(results); setLoadingWorship(false); })
+       .catch(() => setLoadingWorship(false));
 
       setLoadingRecommended(true);
-      gospelApi.getFeed({ q: "powerful prophetic sermon today", type: "all", limit: 4 })
-        .then((data) => { setRecommendedVideos(data.results || []); setLoadingRecommended(false); })
-        .catch(() => setLoadingRecommended(false));
+      fetchWithFallback(
+        () => gospelApi.getFeed({ q: "powerful prophetic sermon today", type: "all", limit: 4 }),
+        "powerful prophetic sermon today", 4
+      ).then((results) => { setRecommendedVideos(results); setLoadingRecommended(false); })
+       .catch(() => setLoadingRecommended(false));
 
-      // Welcome / Picks for You — fetch engaging content for new visitors
+      // Welcome / Picks for You
       if (watchHistory.length === 0) {
         setLoadingWelcome(true);
-        gospelApi.getFeed({ q: "best gospel moments compilation", type: "all", limit: 4 })
-          .then((data) => { setWelcomeVideos(data.results || []); setLoadingWelcome(false); })
-          .catch(() => setLoadingWelcome(false));
+        fetchWithFallback(
+          () => gospelApi.getFeed({ q: "best gospel moments compilation", type: "all", limit: 4 }),
+          "best gospel moments compilation", 4
+        ).then((results) => { setWelcomeVideos(results); setLoadingWelcome(false); })
+         .catch(() => setLoadingWelcome(false));
       }
     } else {
-      // Clear secondary lanes if not on "All"
       setWorshipVideos([]);
       setRecommendedVideos([]);
       setWelcomeVideos([]);
@@ -660,7 +682,7 @@ function Home() {
         <VideoModal 
           video={selectedVideo} 
           onClose={() => setSelectedVideo(null)} 
-          relatedVideos={latestVideos.filter(v => v.id !== selectedVideo.id)} 
+          allVideos={[...latestVideos, ...trendingVideos, ...worshipVideos, ...recommendedVideos]} 
           onSelectRelated={setSelectedVideo} 
         />
       )}
