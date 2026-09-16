@@ -20,7 +20,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import PageShell from "../components/PageShell";
 import VideoModal from "../components/VideoModal";
-import { searchYouTubeVideos } from "../lib/youtube";
+import { gospelApi } from "../lib/api";
 import { isSupabaseConfigured } from "../lib/supabase";
 
 // ── Categories for YouTube search filtering ─────────────────────────
@@ -217,41 +217,46 @@ function Home() {
   const [welcomeVideos, setWelcomeVideos] = useState([]);
   const [loadingWelcome, setLoadingWelcome] = useState(false);
 
-  // ── Fetch real YouTube videos ───────────────────────────────────
+  // ── Fetch real videos via GospelTube Multi-Platform API ───────────
   const fetchVideos = useCallback(async () => {
     const cat = categories.find((c) => c.label === selectedCategory) || categories[0];
 
-    // Latest sermons — use category-specific search
+    // Latest sermons — unified feed (YouTube + Vimeo + Podcasts)
     setLoadingLatest(true);
-    searchYouTubeVideos(`${cat.query} ${new Date().getFullYear()}`, 8)
-      .then((data) => { setLatestVideos(data); setLoadingLatest(false); })
-      .catch(() => setLoadingLatest(false));
+    gospelApi.getFeed({ q: `${cat.query} ${new Date().getFullYear()}`, type: "all", limit: 8 })
+      .then((data) => { setLatestVideos(data.results || []); setLoadingLatest(false); })
+      .catch((err) => { console.error(err); setLoadingLatest(false); });
 
-    // Trending sermons
+    // Trending sermons (Videos specifically)
     setLoadingTrending(true);
-    searchYouTubeVideos(`trending ${cat.query}`, 8)
-      .then((data) => { setTrendingVideos(data); setLoadingTrending(false); })
+    gospelApi.getVideos({ q: `trending ${cat.query}`, source: "all", limit: 8 })
+      .then((data) => { setTrendingVideos(data.results || []); setLoadingTrending(false); })
       .catch(() => setLoadingTrending(false));
 
     // Worship music (always fetch)
     if (selectedCategory === "All") {
       setLoadingWorship(true);
-      searchYouTubeVideos("gospel worship music praise 2025", 6)
-        .then((data) => { setWorshipVideos(data); setLoadingWorship(false); })
+      gospelApi.getMusic({ q: "gospel worship music praise 2025", source: "all", limit: 6 })
+        .then((data) => { setWorshipVideos(data.results || []); setLoadingWorship(false); })
         .catch(() => setLoadingWorship(false));
 
       setLoadingRecommended(true);
-      searchYouTubeVideos("powerful prophetic sermon today", 4)
-        .then((data) => { setRecommendedVideos(data); setLoadingRecommended(false); })
+      gospelApi.getFeed({ q: "powerful prophetic sermon today", type: "all", limit: 4 })
+        .then((data) => { setRecommendedVideos(data.results || []); setLoadingRecommended(false); })
         .catch(() => setLoadingRecommended(false));
 
       // Welcome / Picks for You — fetch engaging content for new visitors
       if (watchHistory.length === 0) {
         setLoadingWelcome(true);
-        searchYouTubeVideos("best gospel sermons of all time must watch", 4)
-          .then((data) => { setWelcomeVideos(data); setLoadingWelcome(false); })
+        gospelApi.getFeed({ q: "best gospel moments compilation", type: "all", limit: 4 })
+          .then((data) => { setWelcomeVideos(data.results || []); setLoadingWelcome(false); })
           .catch(() => setLoadingWelcome(false));
       }
+    } else {
+      // Clear secondary lanes if not on "All"
+      setWorshipVideos([]);
+      setRecommendedVideos([]);
+      setWelcomeVideos([]);
     }
   }, [selectedCategory, watchHistory.length]);
 

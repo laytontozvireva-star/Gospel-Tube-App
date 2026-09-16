@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import ReactPlayer from "react-player";
 import { X, MessageSquare, ListVideo, Minimize2 } from "lucide-react";
 import CommentSection from "./CommentSection";
@@ -8,6 +8,8 @@ import { useAuth } from "../context/AuthContext";
 
 // Track which videos have been view-counted this session to avoid double-counting
 const viewedThisSession = new Set();
+
+const AUTO_NEXT_DELAY = 5; // seconds before auto-playing next video
 
 export default function VideoModal({ video, onClose, allVideos = [], onSelectRelated, startTime = 0 }) {
   const relatedVideos = useMemo(() => {
@@ -21,6 +23,53 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
   const recordedRef = useRef(false);
   const playerRef = useRef(null);
   const hasResumedRef = useRef(false);
+  const countdownRef = useRef(null);
+
+  // Auto-next countdown state
+  const [autoNextCountdown, setAutoNextCountdown] = useState(null); // null = not counting down
+  const autoNextVideo = relatedVideos[0] || null;
+
+  // Called when the video ends – start the YouTube-style countdown
+  const handleVideoEnded = useCallback(() => {
+    if (autoNextVideo && onSelectRelated) {
+      setAutoNextCountdown(AUTO_NEXT_DELAY);
+    }
+  }, [autoNextVideo, onSelectRelated]);
+
+  // Cancel countdown
+  const cancelAutoNext = useCallback(() => {
+    setAutoNextCountdown(null);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+  }, []);
+
+  // Tick the countdown
+  useEffect(() => {
+    if (autoNextCountdown === null) return;
+    if (autoNextCountdown <= 0) {
+      // Play next video
+      onSelectRelated(autoNextVideo);
+      setAutoNextCountdown(null);
+      return;
+    }
+    countdownRef.current = setInterval(() => {
+      setAutoNextCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countdownRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNextCountdown]);
+
+  // Reset countdown when video changes
+  useEffect(() => {
+    setAutoNextCountdown(null);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+  }, [video?.id]);
+
 
   useEffect(() => {
     hasResumedRef.current = false;
@@ -104,7 +153,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
         {/* Left side: Video & Metadata */}
         <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-slate-50 relative">
           
-          <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-sm">
+          <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-sm relative">
             <ReactPlayer
               ref={playerRef}
               url={`https://www.youtube.com/watch?v=${video.id}`}
@@ -113,17 +162,67 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
               playing={true}
               controls={true}
               onReady={resumeFromStartTime}
-              onEnded={() => {
-                if (relatedVideos && relatedVideos.length > 0 && onSelectRelated) {
-                  onSelectRelated(relatedVideos[0]);
-                }
-              }}
+              onEnded={handleVideoEnded}
               config={{
                 youtube: {
                   playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
                 }
               }}
             />
+
+            {/* Auto-next countdown overlay */}
+            {autoNextCountdown !== null && autoNextVideo && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-4 text-white text-center px-6 max-w-sm w-full">
+                  {/* Next video thumbnail preview */}
+                  <div className="w-full rounded-xl overflow-hidden shadow-lg border border-white/10">
+                    <img
+                      src={autoNextVideo.thumbnail || autoNextVideo.image}
+                      alt={autoNextVideo.title}
+                      className="w-full object-cover"
+                      style={{ maxHeight: "110px", objectFit: "cover" }}
+                    />
+                  </div>
+
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/60">Up Next</p>
+                  <p className="text-sm font-bold leading-tight line-clamp-2">{autoNextVideo.title}</p>
+
+                  {/* SVG circular countdown ring */}
+                  <div className="relative flex items-center justify-center w-16 h-16">
+                    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
+                      <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="5" />
+                      <circle
+                        cx="32" cy="32" r="28"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="5"
+                        strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 28}
+                        strokeDashoffset={2 * Math.PI * 28 * (1 - autoNextCountdown / AUTO_NEXT_DELAY)}
+                        style={{ transition: "stroke-dashoffset 0.9s linear" }}
+                      />
+                    </svg>
+                    <span className="text-xl font-extrabold">{autoNextCountdown}</span>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={cancelAutoNext}
+                      className="flex-1 py-2.5 rounded-xl border border-white/30 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => { cancelAutoNext(); onSelectRelated(autoNextVideo); }}
+                      className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-bold text-white transition-colors"
+                    >
+                      Play Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-5 sm:p-7 bg-white shrink-0">
