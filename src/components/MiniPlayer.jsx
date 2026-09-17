@@ -26,7 +26,11 @@ export default function MiniPlayer({ onExpand }) {
     setProgress(state.playedSeconds);
   };
 
-  const videoUrl = miniVideo.videoUrl || miniVideo.url || (miniVideo.id ? `https://www.youtube.com/watch?v=${typeof miniVideo.id === 'object' ? miniVideo.id.videoId : miniVideo.id}` : '');
+  // Recover the correct YouTube ID, even if cached url is broken with [object Object]
+  let ytId = typeof miniVideo.id === 'object' ? miniVideo.id.videoId : miniVideo.id;
+  
+  // If it's a YouTube video, always rebuild a clean URL to fix corrupted local storage
+  const videoUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : (miniVideo.videoUrl || miniVideo.url);
 
   // Fully collapsed: just a tiny bar
   if (collapsed) {

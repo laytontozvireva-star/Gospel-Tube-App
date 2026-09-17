@@ -177,26 +177,36 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
                 allow="autoplay *; encrypted-media *;"
               />
             ) : (
-              <ReactPlayer
-                ref={playerRef}
-                url={video.videoUrl || video.url || (video.id ? `https://www.youtube.com/watch?v=${typeof video.id === 'object' ? video.id.videoId : video.id}` : '')}
-                width="100%"
-                height="100%"
-                playing={true}
-                controls={true}
-                onReady={resumeFromStartTime}
-                onEnded={handleVideoEnded}
-                onProgress={(state) => {
-                  currentTimeRef.current = state.playedSeconds;
-                  setProgress(state.playedSeconds);
-                }}
-                progressInterval={500}
-                config={{
-                  youtube: {
-                    playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
-                  }
-                }}
-              />
+              (() => {
+                // Recover the correct YouTube ID, even if cached url is broken with [object Object]
+                let ytId = typeof video.id === 'object' ? video.id.videoId : video.id;
+                
+                // If it's a YouTube video, always rebuild a clean URL to fix corrupted local storage
+                let cleanUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : (video.videoUrl || video.url);
+
+                return (
+                  <ReactPlayer
+                    ref={playerRef}
+                    url={cleanUrl}
+                    width="100%"
+                    height="100%"
+                    playing={true}
+                    controls={true}
+                    onReady={resumeFromStartTime}
+                    onEnded={handleVideoEnded}
+                    onProgress={(state) => {
+                      currentTimeRef.current = state.playedSeconds;
+                      setProgress(state.playedSeconds);
+                    }}
+                    progressInterval={500}
+                    config={{
+                      youtube: {
+                        playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
+                      }
+                    }}
+                  />
+                );
+              })()
             )}
 
             {/* Auto-next countdown overlay */}
