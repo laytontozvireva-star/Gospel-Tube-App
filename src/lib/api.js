@@ -66,7 +66,7 @@ export async function getVideos({ q = "gospel sermon", source = "all", limit = 1
 
 /** Get full details for a single YouTube video by ID */
 export async function getVideo(videoId) {
-  return apiFetch(`/videos/${videoId}`);
+  return apiFetch(`/videos?id=${encodeURIComponent(videoId)}`);
 }
 
 // ─── Music (Spotify + SoundCloud) ──────────────────────────────────────────

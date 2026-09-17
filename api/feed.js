@@ -1,61 +1,14 @@
-﻿import { setCors } from './_shared/cors.js';
-import { searchYouTube } from './_shared/youtube.js';
-import { searchSpotifyTracks, searchSpotifyPodcasts } from './_shared/spotify.js';
-import { searchApplePodcasts } from './_shared/podcast.js';
-
+import { allowGet, queryLimit, queryText, setCache } from "./_shared/http.js";
+import { searchYouTube } from "./_shared/youtube.js";
+import { searchSpotifyTracks, searchSpotifyPodcasts } from "./_shared/spotify.js";
+import { searchApplePodcasts } from "./_shared/podcast.js";
+const TYPES = new Set(["all", "video", "music", "podcast"]);
 export default async function handler(req, res) {
-  setCors(res);
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  try {
-    const q = req.query.q || "gospel";
-    const type = req.query.type || "all"; 
-    const limit = Math.min(Number(req.query.limit || "8"), 15);
-
-    const fetches = [];
-
-    if (type === "all" || type === "video") fetches.push(searchYouTube(`${q} sermon`, limit));
-    else fetches.push(Promise.resolve([]));
-
-    if (type === "all" || type === "music") fetches.push(searchSpotifyTracks(`${q} worship`, limit));
-    else fetches.push(Promise.resolve([]));
-
-    if (type === "all" || type === "podcast") {
-      fetches.push(searchApplePodcasts(`${q} gospel`, limit));
-      fetches.push(searchSpotifyPodcasts(`${q} gospel`, limit));
-    } else {
-      fetches.push(Promise.resolve([]));
-      fetches.push(Promise.resolve([]));
-    }
-
-    const settled = await Promise.allSettled(fetches);
-    const [youtube, spotify_music, apple, spotify_podcast] = settled.map(
-      (r) => (r.status === "fulfilled" ? r.value : [])
-    );
-
-    const all = interleave([youtube, spotify_music, apple, spotify_podcast]);
-
-    return res.status(200).json({
-      results: all,
-      total: all.length,
-      sources: {
-        youtube: youtube.length,
-        spotify: (spotify_music.length + spotify_podcast.length),
-        apple_podcasts: apple.length,
-      },
-    });
-  } catch (err) {
-    return res.status(500).json({ error: String(err) });
-  }
-}
-
-function interleave(arrays) {
-  const result = [];
-  const max = Math.max(...arrays.map((a) => a.length));
-  for (let i = 0; i < max; i++) {
-    for (const arr of arrays) {
-      if (arr[i] !== undefined) result.push(arr[i]);
-    }
-  }
-  return result;
+  if (!allowGet(req, res)) return;
+  const type = TYPES.has(req.query.type) ? req.query.type : "all";
+  const q = queryText(req.query.q, "gospel"); const limit = queryLimit(req.query.limit, 8, 15); setCache(res, 300, 3600);
+  const tasks = [type === "all" || type === "video" ? searchYouTube(`${q} sermon`, limit) : [], type === "all" || type === "music" ? searchSpotifyTracks(`${q} worship`, limit) : [], type === "all" || type === "podcast" ? searchApplePodcasts(`${q} gospel`, limit) : [], type === "all" || type === "podcast" ? searchSpotifyPodcasts(`${q} gospel`, limit) : []];
+  const settled = await Promise.allSettled(tasks); const groups = settled.map((item) => item.status === "fulfilled" ? item.value : []); const results = [];
+  for (let i = 0; i < Math.max(...groups.map((group) => group.length)); i++) groups.forEach((group) => { if (group[i]) results.push(group[i]); });
+  res.status(200).json({ results, total: results.length, sources: { youtube: groups[0].length, spotify: groups[1].length + groups[3].length, apple_podcasts: groups[2].length } });
 }

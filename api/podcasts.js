@@ -1,9 +1,9 @@
-﻿import { setCors } from './_shared/cors.js';
+import { setCors } from './_shared/cors.js';
 import { searchApplePodcasts } from './_shared/podcast.js';
 import { searchSpotifyPodcasts } from './_shared/spotify.js';
 
 export default async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
