@@ -88,7 +88,7 @@ export default function MiniPlayer({ onExpand }) {
         ) : (
           <ReactPlayer
             ref={playerRef}
-            url={videoUrl}
+            src={videoUrl}
             width="100%"
             height="100%"
             playing={true}

@@ -195,7 +195,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
                 return (
                   <ReactPlayer
                     ref={playerRef}
-                    url={cleanUrl}
+                    src={cleanUrl}
                     width="100%"
                     height="100%"
                     playing={true}
