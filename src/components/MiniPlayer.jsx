@@ -26,7 +26,7 @@ export default function MiniPlayer({ onExpand }) {
     setProgress(state.playedSeconds);
   };
 
-  const videoUrl = miniVideo.url || `https://www.youtube.com/watch?v=${miniVideo.id}`;
+  const videoUrl = miniVideo.videoUrl || miniVideo.url || `https://www.youtube.com/watch?v=${miniVideo.id}`;
 
   // Fully collapsed: just a tiny bar
   if (collapsed) {
@@ -63,7 +63,7 @@ export default function MiniPlayer({ onExpand }) {
           onProgress={handleProgress}
           progressInterval={500}
           config={{
-            youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1, start: Math.floor(getProgress()) } },
+            youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1, start: Math.floor(getProgress() || 0) } },
           }}
         />
 

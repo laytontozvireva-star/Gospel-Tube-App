@@ -79,7 +79,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
   const resumeFromStartTime = () => {
     if (hasResumedRef.current || !startTime || !playerRef.current) return;
 
-    playerRef.current.currentTime = startTime;
+    playerRef.current.seekTo(startTime, "seconds");
     hasResumedRef.current = true;
   };
 
@@ -159,7 +159,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
               ref={playerRef}
               // Use supplied video URL when available (e.g., Spotify, Apple Podcasts)
               // otherwise fall back to YouTube embed using the video ID
-              url={video.url || `https://www.youtube.com/watch?v=${video.id}`}
+              url={video.videoUrl || video.url || `https://www.youtube.com/watch?v=${video.id}`}
               width="100%"
               height="100%"
               playing={true}

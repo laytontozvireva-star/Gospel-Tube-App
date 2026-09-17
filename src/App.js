@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Home from "./pages/Home";
 import Videos from "./pages/Videos";
 import About from "./pages/About";
@@ -35,6 +35,7 @@ function App() {
         <Route path="/import" element={<ImportCsv />} />
       </Routes>
       <MiniPlayerContainer />
+      <SpeedInsights />
     </BrowserRouter>
   );
 }
