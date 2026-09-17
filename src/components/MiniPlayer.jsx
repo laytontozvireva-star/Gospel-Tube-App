@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import ReactPlayer from "react-player";
 import { X, Maximize2, Minimize2, Play } from "lucide-react";
 import { useVideoPlayer } from "../context/VideoPlayerContext";
+import { getVideoPlayerUrl } from "../lib/videoPlayer";
 
 export default function MiniPlayer({ onExpand }) {
   const { miniVideo, closeMini, setProgress, getProgress } = useVideoPlayer();
@@ -23,21 +24,9 @@ export default function MiniPlayer({ onExpand }) {
     }
   };
 
-  // Recover the correct YouTube ID, even if cached url is broken with [object Object]
-  let ytId = typeof miniVideo.id === 'object' ? miniVideo.id.videoId : miniVideo.id;
-  
-  let rawUrl = miniVideo.videoUrl || miniVideo.url;
-  let isYouTube = false;
-  if (rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be'))) {
-    isYouTube = true;
-  } else if (typeof ytId === 'string' && ytId.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(ytId)) {
-    isYouTube = true;
-  }
-  
-  // Only rebuild YouTube URL if it's actually a YouTube video, else use the raw URL
-  const videoUrl = (isYouTube && ytId) ? `https://www.youtube.com/watch?v=${ytId}` : rawUrl;
+  const videoUrl = getVideoPlayerUrl(miniVideo);
 
-  // Fully collapsed: just a tiny bar
+// Fully collapsed: just a tiny bar
   if (collapsed) {
     return (
       <div className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] sm:w-auto bg-slate-900 text-white rounded-2xl shadow-lg flex items-center gap-3 px-4 py-3 max-w-xs cursor-pointer group hover:bg-slate-800 transition-colors border border-slate-700"

@@ -5,6 +5,7 @@ import CommentSection from "./CommentSection";
 import { useVideoPlayer } from "../context/VideoPlayerContext";
 import { isSupabaseConfigured, upsertWatchProgress, incrementViewCount } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { getVideoPlayerUrl } from "../lib/videoPlayer";
 
 // Track which videos have been view-counted this session to avoid double-counting
 const viewedThisSession = new Set();
@@ -187,22 +188,10 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
               />
             ) : (
               (() => {
-                // Recover the correct YouTube ID, even if cached url is broken with [object Object]
-                let ytId = typeof video.id === 'object' ? video.id.videoId : video.id;
-                
-                let rawUrl = video.videoUrl || video.url;
-                let isYouTube = false;
-                if (rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be'))) {
-                  isYouTube = true;
-                } else if (typeof ytId === 'string' && ytId.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(ytId)) {
-                  isYouTube = true;
-                }
-                
-                // Only rebuild YouTube URL if it's actually a YouTube video, else use the raw URL
-                let cleanUrl = (isYouTube && ytId) ? `https://www.youtube.com/watch?v=${ytId}` : rawUrl;
+                const cleanUrl = getVideoPlayerUrl(video);
 
                 return (
-                  <ReactPlayer
+<ReactPlayer
                     ref={playerRef}
                     src={cleanUrl}
                     width="100%"
