@@ -218,35 +218,43 @@ function Home() {
   const [loadingWelcome, setLoadingWelcome] = useState(false);
 
   // ── Fetch real videos via GospelTube API (with YouTube fallback) ───
-  const fetchVideos = useCallback(async () => {
+  const fetchVideos = useCallback(async (isRefresh = false) => {
     const cat = categories.find((c) => c.label === selectedCategory) || categories[0];
+
+    // Add a random offset word when refreshing to get different results
+    const offsetModifiers = ["powerful", "new", "best", "anointed", "latest"];
+    const modifier = isRefresh ? offsetModifiers[Math.floor(Math.random() * offsetModifiers.length)] : "";
 
     // Helper: try gospelApi first, fall back to direct YouTube search
     const fetchWithFallback = async (apiFn, youtubeQuery, limit) => {
       try {
         const data = await apiFn();
-        if (data.results && data.results.length > 0) return data.results;
+        if (data.results && data.results.length > 0) {
+          // If refreshing, shuffle the results slightly to feel fresh
+          return isRefresh ? [...data.results].sort(() => Math.random() - 0.5) : data.results;
+        }
         throw new Error("empty");
       } catch {
         // Fallback: use direct YouTube search (works with npm start)
         const { searchYouTubeVideos } = await import("../lib/youtube");
-        return searchYouTubeVideos(youtubeQuery, limit);
+        const results = await searchYouTubeVideos(youtubeQuery, limit);
+        return isRefresh ? [...results].sort(() => Math.random() - 0.5) : results;
       }
     };
 
     // Latest sermons
     setLoadingLatest(true);
     fetchWithFallback(
-      () => gospelApi.getFeed({ q: `${cat.query} ${new Date().getFullYear()}`, type: "all", limit: 8 }),
-      `${cat.query} ${new Date().getFullYear()}`, 8
+      () => gospelApi.getFeed({ q: `${modifier} ${cat.query} ${new Date().getFullYear()}`, type: "all", limit: 8 }),
+      `${modifier} ${cat.query} ${new Date().getFullYear()}`, 8
     ).then((results) => { setLatestVideos(results); setLoadingLatest(false); })
      .catch(() => setLoadingLatest(false));
 
     // Trending sermons
     setLoadingTrending(true);
     fetchWithFallback(
-      () => gospelApi.getVideos({ q: `trending ${cat.query}`, source: "all", limit: 8 }),
-      `trending ${cat.query}`, 8
+      () => gospelApi.getVideos({ q: `trending ${modifier} ${cat.query}`, source: "all", limit: 8 }),
+      `trending ${modifier} ${cat.query}`, 8
     ).then((results) => { setTrendingVideos(results); setLoadingTrending(false); })
      .catch(() => setLoadingTrending(false));
 
@@ -254,15 +262,15 @@ function Home() {
     if (selectedCategory === "All") {
       setLoadingWorship(true);
       fetchWithFallback(
-        () => gospelApi.getMusic({ q: "gospel worship music praise 2025", source: "all", limit: 6 }),
-        "gospel worship music praise 2025", 6
+        () => gospelApi.getMusic({ q: `${modifier} gospel worship music praise 2025`, source: "all", limit: 6 }),
+        `${modifier} gospel worship music praise 2025`, 6
       ).then((results) => { setWorshipVideos(results); setLoadingWorship(false); })
        .catch(() => setLoadingWorship(false));
 
       setLoadingRecommended(true);
       fetchWithFallback(
-        () => gospelApi.getFeed({ q: "powerful prophetic sermon today", type: "all", limit: 4 }),
-        "powerful prophetic sermon today", 4
+        () => gospelApi.getFeed({ q: `${modifier} prophetic sermon today`, type: "all", limit: 4 }),
+        `${modifier} prophetic sermon today`, 4
       ).then((results) => { setRecommendedVideos(results); setLoadingRecommended(false); })
        .catch(() => setLoadingRecommended(false));
 
@@ -270,8 +278,8 @@ function Home() {
       if (watchHistory.length === 0) {
         setLoadingWelcome(true);
         fetchWithFallback(
-          () => gospelApi.getFeed({ q: "best gospel moments compilation", type: "all", limit: 4 }),
-          "best gospel moments compilation", 4
+          () => gospelApi.getFeed({ q: `${modifier} best gospel moments compilation`, type: "all", limit: 4 }),
+          `${modifier} best gospel moments compilation`, 4
         ).then((results) => { setWelcomeVideos(results); setLoadingWelcome(false); })
          .catch(() => setLoadingWelcome(false));
       }
@@ -283,7 +291,7 @@ function Home() {
   }, [selectedCategory, watchHistory.length]);
 
   useEffect(() => {
-    fetchVideos();
+    fetchVideos(false);
   }, [fetchVideos]);
 
   // ── Hero carousel auto-rotation ─────────────────────────────────
@@ -305,21 +313,32 @@ function Home() {
 
   return (
     <PageShell>
-      {/* Categories Pills Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none mb-6">
-        {categories.map((cat) => (
-          <button
-            key={cat.label}
-            onClick={() => setSelectedCategory(cat.label)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedCategory === cat.label
-                ? "bg-slate-900 text-white shadow-md"
-                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
+      {/* Categories Pills Bar & Refresh Button */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none flex-1 pr-4">
+          {categories.map((cat) => (
+            <button
+              key={cat.label}
+              onClick={() => setSelectedCategory(cat.label)}
+              className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedCategory === cat.label
+                  ? "bg-slate-900 text-white shadow-md"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+        
+        <button 
+          onClick={() => fetchVideos(true)}
+          className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-xs font-bold transition-colors shadow-sm"
+          title="Refresh content"
+        >
+          <RotateCcw size={14} className="shrink-0" />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
       </div>
 
       {/* ══════════ HERO BANNER CAROUSEL ══════════ */}
