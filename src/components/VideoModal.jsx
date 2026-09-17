@@ -181,8 +181,16 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
                 // Recover the correct YouTube ID, even if cached url is broken with [object Object]
                 let ytId = typeof video.id === 'object' ? video.id.videoId : video.id;
                 
-                // If it's a YouTube video, always rebuild a clean URL to fix corrupted local storage
-                let cleanUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : (video.videoUrl || video.url);
+                let rawUrl = video.videoUrl || video.url;
+                let isYouTube = false;
+                if (rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be'))) {
+                  isYouTube = true;
+                } else if (typeof ytId === 'string' && ytId.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(ytId)) {
+                  isYouTube = true;
+                }
+                
+                // Only rebuild YouTube URL if it's actually a YouTube video, else use the raw URL
+                let cleanUrl = (isYouTube && ytId) ? `https://www.youtube.com/watch?v=${ytId}` : rawUrl;
 
                 return (
                   <ReactPlayer

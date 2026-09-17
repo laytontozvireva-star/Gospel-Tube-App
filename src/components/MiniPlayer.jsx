@@ -29,8 +29,16 @@ export default function MiniPlayer({ onExpand }) {
   // Recover the correct YouTube ID, even if cached url is broken with [object Object]
   let ytId = typeof miniVideo.id === 'object' ? miniVideo.id.videoId : miniVideo.id;
   
-  // If it's a YouTube video, always rebuild a clean URL to fix corrupted local storage
-  const videoUrl = ytId ? `https://www.youtube.com/watch?v=${ytId}` : (miniVideo.videoUrl || miniVideo.url);
+  let rawUrl = miniVideo.videoUrl || miniVideo.url;
+  let isYouTube = false;
+  if (rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be'))) {
+    isYouTube = true;
+  } else if (typeof ytId === 'string' && ytId.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(ytId)) {
+    isYouTube = true;
+  }
+  
+  // Only rebuild YouTube URL if it's actually a YouTube video, else use the raw URL
+  const videoUrl = (isYouTube && ytId) ? `https://www.youtube.com/watch?v=${ytId}` : rawUrl;
 
   // Fully collapsed: just a tiny bar
   if (collapsed) {
