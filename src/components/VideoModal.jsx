@@ -18,12 +18,13 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
   }, [video, allVideos]);
 
   const [activeTab, setActiveTab] = useState("playlist");
-  const { minimize } = useVideoPlayer();
+  const { minimize, setProgress } = useVideoPlayer();
   const { user } = useAuth();
   const recordedRef = useRef(false);
   const playerRef = useRef(null);
   const hasResumedRef = useRef(false);
   const countdownRef = useRef(null);
+  const currentTimeRef = useRef(0);
 
   // Auto-next countdown state
   const [autoNextCountdown, setAutoNextCountdown] = useState(null); // null = not counting down
@@ -127,14 +128,14 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
       onClick={onClose}
     >
       <div 
-        className="w-full h-full sm:h-auto sm:max-w-7xl sm:max-h-[95vh] overflow-hidden sm:rounded-2xl bg-white shadow-2xl flex flex-col lg:flex-row relative" 
+        className="w-full h-full sm:h-auto sm:max-w-7xl sm:max-h-[95vh] overflow-hidden sm:rounded-2xl bg-white shadow-lg flex flex-col lg:flex-row relative" 
         onClick={(event) => event.stopPropagation()}
       >
         {/* Mobile close/minimize floating buttons (over video) */}
         <div className="lg:hidden absolute top-3 right-3 z-50 flex items-center gap-2">
           <button 
             type="button" 
-            onClick={() => { minimize(video); onClose(); }} 
+            onClick={() => { minimize(video, currentTimeRef.current); onClose(); }} 
             className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md transition-colors hover:bg-black/70"
             aria-label="Minimize player"
           >
@@ -153,7 +154,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
         {/* Left side: Video & Metadata */}
         <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-slate-50 relative">
           
-          <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-sm relative">
+          <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-xs relative">
             <ReactPlayer
               ref={playerRef}
               // Use supplied video URL when available (e.g., Spotify, Apple Podcasts)
@@ -165,6 +166,11 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
               controls={true}
               onReady={resumeFromStartTime}
               onEnded={handleVideoEnded}
+              onProgress={(state) => {
+                currentTimeRef.current = state.playedSeconds;
+                setProgress(state.playedSeconds);
+              }}
+              progressInterval={500}
               config={{
                 youtube: {
                   playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
@@ -351,7 +357,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
               <button 
                 type="button" 
                 onClick={() => {
-                  minimize(video);
+                  minimize(video, currentTimeRef.current);
                   onClose();
                 }} 
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 shadow-sm border border-transparent hover:border-slate-200"

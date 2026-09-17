@@ -152,7 +152,7 @@ function SearchResults() {
         <VideoModal 
           video={selectedVideo} 
           onClose={() => setSelectedVideo(null)} 
-          relatedVideos={visibleResults.filter(v => v.id !== selectedVideo.id)} 
+          allVideos={visibleResults} 
           onSelectRelated={setSelectedVideo} 
         />
       )}

@@ -121,7 +121,7 @@ function History() {
         <VideoModal
           video={selectedVideo}
           onClose={() => setSelectedVideo(null)}
-          relatedVideos={historyItems.filter((v) => v.id !== selectedVideo.id)}
+          allVideos={historyItems}
           onSelectRelated={setSelectedVideo}
         />
       )}

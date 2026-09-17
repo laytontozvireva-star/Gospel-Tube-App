@@ -4,21 +4,34 @@ import { X, Maximize2, Minimize2, Play } from "lucide-react";
 import { useVideoPlayer } from "../context/VideoPlayerContext";
 
 export default function MiniPlayer({ onExpand }) {
-  const { miniVideo, closeMini } = useVideoPlayer();
+  const { miniVideo, closeMini, setProgress, getProgress } = useVideoPlayer();
   const [collapsed, setCollapsed] = useState(false);
   const playerRef = useRef(null);
 
   if (!miniVideo) return null;
 
   const handleExpand = () => {
-    const currentTime = Number(playerRef.current?.currentTime) || 0;
+    // Get current time from the ReactPlayer internal player
+    let currentTime = 0;
+    try {
+      const internal = playerRef.current?.getInternalPlayer?.();
+      currentTime = internal?.getCurrentTime?.() || getProgress() || 0;
+    } catch {
+      currentTime = getProgress() || 0;
+    }
     onExpand?.(miniVideo, currentTime);
   };
+
+  const handleProgress = (state) => {
+    setProgress(state.playedSeconds);
+  };
+
+  const videoUrl = miniVideo.url || `https://www.youtube.com/watch?v=${miniVideo.id}`;
 
   // Fully collapsed: just a tiny bar
   if (collapsed) {
     return (
-      <div className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] sm:w-auto bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center gap-3 px-4 py-3 max-w-xs cursor-pointer group hover:bg-slate-800 transition-colors border border-slate-700"
+      <div className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] sm:w-auto bg-slate-900 text-white rounded-2xl shadow-lg flex items-center gap-3 px-4 py-3 max-w-xs cursor-pointer group hover:bg-slate-800 transition-colors border border-slate-700"
         onClick={() => setCollapsed(false)}
       >
         <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center shrink-0">
@@ -37,23 +50,25 @@ export default function MiniPlayer({ onExpand }) {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] sm:w-[360px] bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 group">
+    <div className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] sm:w-[360px] bg-slate-900 rounded-2xl shadow-lg overflow-hidden border border-slate-700/50 group">
       {/* Mini video */}
       <div className="relative aspect-video bg-black">
         <ReactPlayer
           ref={playerRef}
-          src={`https://www.youtube.com/watch?v=${miniVideo.id}`}
+          url={videoUrl}
           width="100%"
           height="100%"
           playing={true}
           controls={true}
+          onProgress={handleProgress}
+          progressInterval={500}
           config={{
-            youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1 } },
+            youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1, start: Math.floor(getProgress()) } },
           }}
         />
 
         {/* Hover controls overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
         {/* Top controls */}
         <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -114,7 +114,7 @@ function LikedVideos() {
         <VideoModal
           video={selectedVideo}
           onClose={() => setSelectedVideo(null)}
-          relatedVideos={likedVideos.filter((v) => v.id !== selectedVideo.id)}
+          allVideos={likedVideos}
           onSelectRelated={setSelectedVideo}
         />
       )}

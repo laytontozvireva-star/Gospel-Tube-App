@@ -226,7 +226,7 @@ function Playlists() {
         <VideoModal
           video={selectedVideo}
           onClose={() => { setSelectedVideo(null); setPlaylistVideos([]); }}
-          relatedVideos={playlistVideos.filter((v) => v.id !== selectedVideo.id)}
+          allVideos={playlistVideos}
           onSelectRelated={setSelectedVideo}
         />
       )}
