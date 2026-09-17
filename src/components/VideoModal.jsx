@@ -155,6 +155,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
         <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-slate-50 relative">
           
           <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-xs relative">
+            {console.log("VideoModal rendering video:", video)}
             {video.source === "spotify" ? (
               <iframe
                 title={video.title}
@@ -178,7 +179,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
             ) : (
               <ReactPlayer
                 ref={playerRef}
-                url={video.videoUrl || video.url || `https://www.youtube.com/watch?v=${video.id}`}
+                url={video.videoUrl || video.url || (video.id ? `https://www.youtube.com/watch?v=${typeof video.id === 'object' ? video.id.videoId : video.id}` : '')}
                 width="100%"
                 height="100%"
                 playing={true}

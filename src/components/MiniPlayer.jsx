@@ -26,7 +26,7 @@ export default function MiniPlayer({ onExpand }) {
     setProgress(state.playedSeconds);
   };
 
-  const videoUrl = miniVideo.videoUrl || miniVideo.url || `https://www.youtube.com/watch?v=${miniVideo.id}`;
+  const videoUrl = miniVideo.videoUrl || miniVideo.url || (miniVideo.id ? `https://www.youtube.com/watch?v=${typeof miniVideo.id === 'object' ? miniVideo.id.videoId : miniVideo.id}` : '');
 
   // Fully collapsed: just a tiny bar
   if (collapsed) {
