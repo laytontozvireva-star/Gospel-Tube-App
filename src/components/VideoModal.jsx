@@ -155,28 +155,48 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
         <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-slate-50 relative">
           
           <div className="aspect-video bg-black sticky top-0 z-40 lg:z-0 shrink-0 shadow-xs relative">
-            <ReactPlayer
-              ref={playerRef}
-              // Use supplied video URL when available (e.g., Spotify, Apple Podcasts)
-              // otherwise fall back to YouTube embed using the video ID
-              url={video.videoUrl || video.url || `https://www.youtube.com/watch?v=${video.id}`}
-              width="100%"
-              height="100%"
-              playing={true}
-              controls={true}
-              onReady={resumeFromStartTime}
-              onEnded={handleVideoEnded}
-              onProgress={(state) => {
-                currentTimeRef.current = state.playedSeconds;
-                setProgress(state.playedSeconds);
-              }}
-              progressInterval={500}
-              config={{
-                youtube: {
-                  playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
-                }
-              }}
-            />
+            {video.source === "spotify" ? (
+              <iframe
+                title={video.title}
+                src={`https://open.spotify.com/embed/${video.type === "podcast" ? "show" : "track"}/${video.id}?utm_source=generator&theme=0`}
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+              />
+            ) : video.source === "apple_podcasts" ? (
+              <iframe
+                title={video.title}
+                src={`https://embed.podcasts.apple.com/us/podcast/id${video.id}`}
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+                allow="autoplay *; encrypted-media *;"
+              />
+            ) : (
+              <ReactPlayer
+                ref={playerRef}
+                url={video.videoUrl || video.url || `https://www.youtube.com/watch?v=${video.id}`}
+                width="100%"
+                height="100%"
+                playing={true}
+                controls={true}
+                onReady={resumeFromStartTime}
+                onEnded={handleVideoEnded}
+                onProgress={(state) => {
+                  currentTimeRef.current = state.playedSeconds;
+                  setProgress(state.playedSeconds);
+                }}
+                progressInterval={500}
+                config={{
+                  youtube: {
+                    playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
+                  }
+                }}
+              />
+            )}
 
             {/* Auto-next countdown overlay */}
             {autoNextCountdown !== null && autoNextVideo && (

@@ -53,19 +53,41 @@ export default function MiniPlayer({ onExpand }) {
     <div className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] sm:w-[360px] bg-slate-900 rounded-2xl shadow-lg overflow-hidden border border-slate-700/50 group">
       {/* Mini video */}
       <div className="relative aspect-video bg-black">
-        <ReactPlayer
-          ref={playerRef}
-          url={videoUrl}
-          width="100%"
-          height="100%"
-          playing={true}
-          controls={true}
-          onProgress={handleProgress}
-          progressInterval={500}
-          config={{
-            youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1, start: Math.floor(getProgress() || 0) } },
-          }}
-        />
+        {miniVideo.source === "spotify" ? (
+          <iframe
+            title={miniVideo.title}
+            src={`https://open.spotify.com/embed/${miniVideo.type === "podcast" ? "show" : "track"}/${miniVideo.id}?utm_source=generator&theme=0`}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+          />
+        ) : miniVideo.source === "apple_podcasts" ? (
+          <iframe
+            title={miniVideo.title}
+            src={`https://embed.podcasts.apple.com/us/podcast/id${miniVideo.id}`}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+            allow="autoplay *; encrypted-media *;"
+          />
+        ) : (
+          <ReactPlayer
+            ref={playerRef}
+            url={videoUrl}
+            width="100%"
+            height="100%"
+            playing={true}
+            controls={true}
+            onProgress={handleProgress}
+            progressInterval={500}
+            config={{
+              youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1, start: Math.floor(getProgress() || 0) } },
+            }}
+          />
+        )}
 
         {/* Hover controls overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
