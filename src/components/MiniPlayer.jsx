@@ -11,19 +11,16 @@ export default function MiniPlayer({ onExpand }) {
   if (!miniVideo) return null;
 
   const handleExpand = () => {
-    // Get current time from the ReactPlayer internal player
-    let currentTime = 0;
-    try {
-      const internal = playerRef.current?.getInternalPlayer?.();
-      currentTime = internal?.getCurrentTime?.() || getProgress() || 0;
-    } catch {
-      currentTime = getProgress() || 0;
-    }
+    // ReactPlayer v3 forwards a media-element compatible ref.
+    const currentTime = playerRef.current?.currentTime || getProgress() || 0;
     onExpand?.(miniVideo, currentTime);
   };
 
-  const handleProgress = (state) => {
-    setProgress(state.playedSeconds);
+  const handleTimeUpdate = (event) => {
+    const seconds = event.currentTarget?.currentTime ?? playerRef.current?.currentTime;
+    if (typeof seconds === "number" && Number.isFinite(seconds)) {
+      setProgress(seconds);
+    }
   };
 
   // Recover the correct YouTube ID, even if cached url is broken with [object Object]
@@ -93,8 +90,7 @@ export default function MiniPlayer({ onExpand }) {
             height="100%"
             playing={true}
             controls={true}
-            onProgress={handleProgress}
-            progressInterval={500}
+            onTimeUpdate={handleTimeUpdate}
             config={{
               youtube: { playerVars: { autoplay: 1, rel: 0, modestbranding: 1, start: Math.floor(getProgress() || 0) } },
             }}

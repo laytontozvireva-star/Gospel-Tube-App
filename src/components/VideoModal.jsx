@@ -79,8 +79,17 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
   const resumeFromStartTime = () => {
     if (hasResumedRef.current || !startTime || !playerRef.current) return;
 
-    playerRef.current.seekTo(startTime, "seconds");
+    // ReactPlayer v3 forwards a media-element compatible ref.
+    playerRef.current.currentTime = startTime;
     hasResumedRef.current = true;
+  };
+
+  const handleTimeUpdate = (event) => {
+    const seconds = event.currentTarget?.currentTime ?? playerRef.current?.currentTime;
+    if (typeof seconds === "number" && Number.isFinite(seconds)) {
+      currentTimeRef.current = seconds;
+      setProgress(seconds);
+    }
   };
 
   // Record watch history and increment view count when video opens
@@ -202,11 +211,7 @@ export default function VideoModal({ video, onClose, allVideos = [], onSelectRel
                     controls={true}
                     onReady={resumeFromStartTime}
                     onEnded={handleVideoEnded}
-                    onProgress={(state) => {
-                      currentTimeRef.current = state.playedSeconds;
-                      setProgress(state.playedSeconds);
-                    }}
-                    progressInterval={500}
+                    onTimeUpdate={handleTimeUpdate}
                     config={{
                       youtube: {
                         playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
